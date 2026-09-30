@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10z" fill="#8b5cf6"/>
+    </marker>
+    <style>
+      .box{fill:#161029;stroke:#8b5cf6;stroke-width:1.5}
+      .hot{fill:#221034;stroke:#ec4899;stroke-width:1.5}
+      .cy{fill:#0f1f2b;stroke:#22d3ee;stroke-width:1.5}
+      .t{fill:#f1edff;font-size:15px;font-weight:700}
+      .s{fill:#b3aad6;font-size:12px}
+      .l{stroke:#8b5cf6;stroke-width:1.6;fill:none;marker-end:url(#a)}
+      .zone{fill:none;stroke:#3b2f63;stroke-dasharray:6 6;stroke-width:1.2}
+      .zl{fill:#8b7fbf;font-size:12px;letter-spacing:2px}
+    </style>
+  </defs>
+  <rect width="1000" height="520" rx="18" fill="#0b0718"/>
+
+  <rect class="zone" x="20" y="20" width="600" height="480" rx="14"/>
+  <text class="zl" x="38" y="44">HOST PC · WINDOWS</text>
+  <rect class="zone" x="650" y="20" width="330" height="480" rx="14"/>
+  <text class="zl" x="668" y="44">LAN COMPANIONS</text>
+
+  <rect class="box" x="40" y="64" width="200" height="62" rx="10"/>
+  <text class="t" x="56" y="90">Spotify / Windows</text><text class="s" x="56" y="110">system audio output</text>
+
+  <rect class="box" x="40" y="176" width="200" height="62" rx="10"/>
+  <text class="t" x="56" y="202">WASAPI loopback</text><text class="s" x="56" y="222">16 kHz mono · 48 kHz stereo</text>
+
+  <rect class="box" x="40" y="290" width="200" height="62" rx="10"/>
+  <text class="t" x="56" y="316">Media Oracle</text><text class="s" x="56" y="336">SMTC · playback timeline</text>
+
+  <rect class="box" x="40" y="404" width="200" height="72" rx="10"/>
+  <text class="t" x="56" y="430">Lyric providers</text><text class="s" x="56" y="450">Musixmatch · LRCLIB</text><text class="s" x="56" y="466">local alignment fallback</text>
+
+  <rect class="box" x="300" y="130" width="200" height="62" rx="10"/>
+  <text class="t" x="316" y="156">Whisper resync</text><text class="s" x="316" y="176">FORCE / SYNC MUSIXMATCH</text>
+
+  <rect class="box" x="300" y="226" width="200" height="62" rx="10"/>
+  <text class="t" x="316" y="252">Beat Oracle</text><text class="s" x="316" y="272">BPM · phase · 4/4 bars</text>
+
+  <rect class="hot" x="300" y="322" width="200" height="62" rx="10"/>
+  <text class="t" x="316" y="348">Semantic Lexicon</text><text class="s" x="316" y="368">deterministic word → visual</text>
+
+  <rect class="box" x="300" y="64" width="200" height="50" rx="10"/>
+  <text class="t" x="316" y="95">WebRTC · Opus</text>
+
+  <rect class="cy" x="300" y="420" width="300" height="56" rx="10"/>
+  <text class="t" x="316" y="444">WebSocket hub  ·  mDNS  ·  QR</text><text class="s" x="316" y="463">lyricfestival.local</text>
+
+  <rect class="hot" x="670" y="64" width="290" height="62" rx="10"/>
+  <text class="t" x="686" y="90">Host display (localhost)</text><text class="s" x="686" y="110">full UI · controls · debug badges</text>
+
+  <rect class="cy" x="670" y="176" width="290" height="62" rx="10"/>
+  <text class="t" x="686" y="202">Phone</text><text class="s" x="686" y="222">RAVE / KARAOKE · private audio</text>
+
+  <rect class="cy" x="670" y="272" width="290" height="62" rx="10"/>
+  <text class="t" x="686" y="298">Tablet · Desktop</text><text class="s" x="686" y="318">wider cinematic stage</text>
+
+  <rect class="cy" x="670" y="368" width="290" height="62" rx="10"/>
+  <text class="t" x="686" y="394">Samsung TV (Tizen)</text><text class="s" x="686" y="414">STANDARD · LITE · ULTRA-LITE</text>
+
+  <path class="l" d="M140 126v50"/>
+  <path class="l" d="M240 196h40v-30h20"/>
+  <path class="l" d="M240 214h40v42h20"/>
+  <path class="l" d="M240 186h30V89h30"/>
+  <path class="l" d="M140 404v-52"/>
+  <path class="l" d="M240 321h30v112h30"/>
+  <path class="l" d="M240 460h60"/>
+  <path class="l" d="M500 161h40v259"/>
+  <path class="l" d="M500 257h60v163"/>
+  <path class="l" d="M500 353h80v67"/>
+  <path class="l" d="M600 448h40V95h30"/>
+  <path class="l" d="M640 207h30"/>
+  <path class="l" d="M640 303h30"/>
+  <path class="l" d="M640 399h30"/>
+  <path d="M500 89h110v100h60" fill="none" stroke="#ec4899" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#a)"/>
+  <text class="s" x="545" y="82">private audio</text>
+</svg>

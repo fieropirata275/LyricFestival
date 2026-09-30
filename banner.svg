@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0718"/>
+      <stop offset="0.55" stop-color="#1b1036"/>
+      <stop offset="1" stop-color="#2a0e3a"/>
+    </linearGradient>
+    <linearGradient id="txt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="0.5" stop-color="#ec4899"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.5" r="0.35">
+      <stop offset="0" stop-color="#ec4899" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#ec4899" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="300" rx="22" fill="url(#bg)"/>
+  <rect width="1200" height="300" rx="22" fill="url(#glow)"/>
+  <g fill="none" stroke="#22d3ee" stroke-opacity="0.35">
+    <circle cx="985" cy="150" r="60" stroke-width="2"/>
+    <circle cx="985" cy="150" r="95" stroke-width="1.5" stroke="#8b5cf6" stroke-opacity="0.4"/>
+    <circle cx="985" cy="150" r="130" stroke-width="1" stroke="#ec4899" stroke-opacity="0.3"/>
+  </g>
+  <circle cx="985" cy="150" r="26" fill="#ec4899" fill-opacity="0.85"/>
+  <g fill="url(#txt)" opacity="0.9">
+    <rect x="60" y="226" width="8" height="22" rx="4"/><rect x="76" y="212" width="8" height="36" rx="4"/>
+    <rect x="92" y="200" width="8" height="48" rx="4"/><rect x="108" y="218" width="8" height="30" rx="4"/>
+    <rect x="124" y="192" width="8" height="56" rx="4"/><rect x="140" y="208" width="8" height="40" rx="4"/>
+    <rect x="156" y="222" width="8" height="26" rx="4"/><rect x="172" y="204" width="8" height="44" rx="4"/>
+    <rect x="188" y="215" width="8" height="33" rx="4"/><rect x="204" y="228" width="8" height="20" rx="4"/>
+  </g>
+  <text x="60" y="130" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="74" font-weight="800" fill="url(#txt)">LyricFestival</text>
+  <text x="62" y="172" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" fill="#c9c3f0">Real-time synced lyrics · beat-reactive visuals · LAN rave companions</text>
+</svg>
