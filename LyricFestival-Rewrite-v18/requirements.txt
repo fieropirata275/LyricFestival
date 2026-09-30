@@ -1,0 +1,13 @@
+aiohttp>=3.12,<4
+winrt-Windows.Foundation>=3.2,<4
+winrt-Windows.Foundation.Collections>=3.2,<4
+winrt-Windows.Media.Control>=3.2,<4
+numpy>=1.26,<3
+rapidfuzz>=3.9,<4
+soundcard>=0.4.4,<0.5
+faster-whisper>=1.1,<2
+zeroconf>=0.147,<1
+qrcode[pil]>=8,<9
+psutil>=6,<8
+aiortc>=1.9,<2
+av>=12,<17

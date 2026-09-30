@@ -1,0 +1,1533 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LyricFestival Rewrite</title>
+<style>
+:root{--accent:#d7ff57;--bg:#07070a}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07070a;color:white;font-family:Inter,Segoe UI,Arial,sans-serif}
+#stage{position:relative;width:100vw;height:100vh;overflow:hidden;background:
+radial-gradient(circle at 30% 70%,rgba(0,170,255,.18),transparent 35%),
+radial-gradient(circle at 72% 32%,rgba(255,20,100,.15),transparent 38%),
+linear-gradient(180deg,#0a0a10,#040406)}
+#hud{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;z-index:10}
+#title{font-weight:800;font-size:16px}#artist{font-size:12px;opacity:.45;margin-top:3px}
+.badges{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.badge{font-size:10px;padding:7px 10px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(0,0,0,.22)}
+#lyrics{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;perspective:1200px}
+#hero{font-size:clamp(64px,12vw,230px);font-weight:900;letter-spacing:-.06em;line-height:.9;text-align:center;position:relative}
+#hero .fill{position:absolute;inset:0;color:var(--accent);clip-path:inset(0 var(--remain,100%) 0 0)}
+#future{position:absolute;inset:0;pointer-events:none}
+.f{position:absolute;left:50%;top:50%;font-weight:800;opacity:.18;transform-style:preserve-3d}
+#prev,#next{position:absolute;left:50%;transform:translateX(-50%);width:80vw;text-align:center;opacity:.12;font-size:clamp(18px,2vw,34px);font-weight:700}
+#prev{top:13%}#next{bottom:13%}
+#status{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-size:11px;opacity:.4}
+
+/* =========================================================
+   v6 VISUAL RAVE — presentation only. No timing logic here.
+   ========================================================= */
+:root{
+  --fxA:#d7ff57;
+  --fxB:#7f5cff;
+  --fxGlow:rgba(215,255,87,.45);
+}
+#stage{isolation:isolate;transition:background 700ms ease}
+#semanticLayer,#particleLayer,#beamLayer,#echoLayer{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden
+}
+#beamLayer{z-index:1;mix-blend-mode:screen}
+#particleLayer{z-index:3}
+#echoLayer{z-index:4}
+#semanticLayer{z-index:2}
+#lyrics{z-index:5}
+#hud,#status{z-index:20}
+
+.fx-beam{
+  position:absolute;top:-30%;width:14vw;height:155%;
+  opacity:0;filter:blur(8px);transform-origin:50% 0;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--fxA),transparent 65%),transparent 72%);
+}
+#beam1{left:12%;transform:rotate(18deg)}
+#beam2{right:12%;transform:rotate(-18deg)}
+#beam3{left:43%;width:11vw}
+
+.fx-particle{
+  position:absolute;left:50%;top:50%;width:7px;height:7px;
+  border-radius:999px;background:var(--pc,var(--fxA));
+  box-shadow:0 0 16px var(--pc,var(--fxA));
+  animation:fxParticle var(--dur,800ms) cubic-bezier(.12,.72,.2,1) forwards
+}
+@keyframes fxParticle{
+  from{opacity:.9;transform:translate(-50%,-50%) scale(1)}
+  to{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.1)}
+}
+
+.fx-symbol{
+  position:absolute;left:var(--x);top:-10%;font-size:clamp(22px,3vw,54px);
+  font-weight:900;opacity:.55;color:var(--fxA);
+  text-shadow:0 0 24px var(--fxGlow);
+  animation:fxFall var(--dur,1300ms) linear forwards
+}
+@keyframes fxFall{to{top:112%;transform:rotate(var(--rot)) translateX(var(--drift));opacity:0}}
+
+.fx-ripple{
+  position:absolute;left:50%;top:50%;width:12px;height:12px;border-radius:50%;
+  border:3px solid var(--fxA);transform:translate(-50%,-50%);
+  animation:fxRipple 750ms ease-out forwards
+}
+@keyframes fxRipple{to{width:65vw;height:65vw;opacity:0;border-width:1px}}
+
+.fx-star{
+  position:absolute;width:3px;height:3px;border-radius:50%;background:white;
+  box-shadow:0 0 11px white;animation:fxStar 1100ms ease-out forwards
+}
+@keyframes fxStar{0%{opacity:0;transform:scale(.2)}35%{opacity:1}100%{opacity:0;transform:scale(2.4)}}
+
+.fx-echo{
+  position:absolute;left:50%;top:50%;font-size:clamp(64px,12vw,230px);
+  font-weight:900;letter-spacing:-.06em;line-height:.9;white-space:nowrap;
+  color:transparent;-webkit-text-stroke:1.5px var(--fxA);opacity:.30;
+  animation:fxEcho 650ms cubic-bezier(.18,.8,.2,1) forwards
+}
+@keyframes fxEcho{
+  from{transform:translate(-50%,-50%) scale(.95);opacity:.36}
+  to{transform:translate(-50%,-50%) scale(1.65);opacity:0;filter:blur(6px)}
+}
+
+#hero{
+  transform-style:preserve-3d;
+  will-change:transform,filter;
+  text-shadow:0 12px 50px rgba(0,0,0,.45);
+}
+#hero .fill{filter:drop-shadow(0 0 18px var(--fxGlow))}
+#hero.fx-default{animation:fxHeroDefault 260ms cubic-bezier(.18,.82,.2,1)}
+@keyframes fxHeroDefault{from{opacity:.15;transform:translateZ(-120px) scale(.82)}to{opacity:1;transform:none}}
+#hero.fx-fire{animation:fxFire 420ms ease-out;color:#fff2dc;text-shadow:0 0 18px #ffb02e,0 0 58px #ff3b00}
+@keyframes fxFire{0%{transform:translateY(.16em) scale(.82) rotateX(18deg);filter:blur(8px)}55%{transform:translateY(-.04em) scale(1.10)}100%{transform:none}}
+#hero.fx-ice{animation:fxIce 520ms ease-out;text-shadow:0 0 20px #cbfbff,0 0 65px #31bfff}
+@keyframes fxIce{0%{letter-spacing:.08em;filter:blur(15px);transform:scale(1.15)}100%{letter-spacing:-.06em;filter:none}}
+#hero.fx-water{animation:fxWater 580ms ease-out}
+@keyframes fxWater{0%{transform:rotateZ(-4deg) translateY(.1em) scaleX(1.15)}45%{transform:rotateZ(3deg) translateY(-.05em) scaleX(.96)}100%{transform:none}}
+#hero.fx-love{animation:fxLove 520ms ease-out;text-shadow:0 0 38px #ff4d9b}
+@keyframes fxLove{0%,100%{transform:scale(1)}30%{transform:scale(1.14)}55%{transform:scale(.98)}78%{transform:scale(1.08)}}
+#hero.fx-money{animation:fxMoney 400ms cubic-bezier(.1,.9,.2,1);text-shadow:0 0 45px #8aff5c}
+@keyframes fxMoney{from{transform:rotateY(80deg) scale(.7)}to{transform:none}}
+#hero.fx-speed{animation:fxSpeed 300ms ease-out}
+@keyframes fxSpeed{from{transform:translateX(-25vw) skewX(-18deg);filter:blur(10px)}to{transform:none;filter:none}}
+#hero.fx-up{animation:fxUp 430ms ease-out}
+@keyframes fxUp{from{transform:translateY(30vh) translateZ(-180px);opacity:.1}to{transform:none;opacity:1}}
+#hero.fx-down{animation:fxDown 480ms ease-in}
+@keyframes fxDown{0%{transform:translateY(-28vh) rotateX(-25deg)}70%{transform:translateY(.06em) scaleY(.88)}100%{transform:none}}
+#hero.fx-impact{animation:fxImpact 260ms cubic-bezier(.08,.9,.2,1);text-shadow:0 0 45px white}
+@keyframes fxImpact{from{transform:scale(2.6) translateZ(250px);filter:blur(12px)}to{transform:none;filter:none}}
+#hero.fx-glitch{animation:fxGlitch 280ms steps(2,end);text-shadow:7px 0 #ff176d,-7px 0 #00e5ff}
+@keyframes fxGlitch{0%{transform:translate(0)}20%{transform:translate(-8px,3px) skewX(8deg)}45%{transform:translate(7px,-2px)}70%{transform:translate(-3px,1px) skewX(-5deg)}100%{transform:none}}
+#hero.fx-cosmic{animation:fxCosmic 720ms cubic-bezier(.2,.8,.2,1);text-shadow:0 0 25px #c983ff,0 0 80px #535cff}
+@keyframes fxCosmic{from{transform:translateZ(-550px) rotateY(40deg) scale(.3);filter:blur(16px)}to{transform:none;filter:none}}
+#hero.fx-rave{animation:fxRave 360ms ease-out;text-shadow:5px 0 #ff1f91,-5px 0 #00f0ff,0 0 45px white}
+@keyframes fxRave{0%{transform:scaleY(.3) scaleX(1.6)}55%{transform:scaleY(1.15) scaleX(.92)}100%{transform:none}}
+#hero.fx-dark{animation:fxDark 700ms ease-out;text-shadow:0 0 55px #8062ff}
+@keyframes fxDark{from{opacity:0;filter:blur(24px);letter-spacing:.18em;transform:scale(.72)}to{opacity:1;filter:none;letter-spacing:-.06em}}
+#hero.fx-light{animation:fxLight 420ms ease-out;text-shadow:0 0 22px white,0 0 90px white}
+@keyframes fxLight{0%{filter:brightness(3);transform:scale(.7)}100%{filter:none;transform:none}}
+#hero.fx-royal{animation:fxRoyal 560ms cubic-bezier(.18,.8,.2,1);text-shadow:0 0 32px #ffd95b}
+@keyframes fxRoyal{from{transform:translateY(-16vh) rotateX(35deg) scale(1.4)}to{transform:none}}
+#hero.fx-alone{animation:fxAlone 760ms ease-out}
+@keyframes fxAlone{0%{transform:scale(1.5);letter-spacing:.1em}100%{transform:scale(.82);letter-spacing:-.06em}}
+#hero.fx-stop{animation:fxStop 120ms steps(1,end)}
+@keyframes fxStop{from{transform:scale(1.18)}to{transform:none}}
+#hero.fx-repeat{animation:fxRepeat 420ms ease-out}
+@keyframes fxRepeat{0%{transform:translateX(-.25em)}35%{transform:translateX(.18em)}70%{transform:translateX(-.08em)}100%{transform:none}}
+
+
+#hero.fx-smoke{animation:fxSmoke 620ms ease-out;text-shadow:0 0 30px #d7d7d7,0 0 80px #8f8f8f}
+@keyframes fxSmoke{0%{filter:blur(18px);opacity:.15;transform:scale(.82) translateY(.14em)}55%{filter:blur(5px);opacity:1}100%{filter:none;transform:none}}
+#hero.fx-toxic{animation:fxToxic 560ms ease-out;text-shadow:0 0 30px #a8ff3f,0 0 82px #35ff8f}
+@keyframes fxToxic{0%{transform:skewX(-18deg) scaleX(1.35);filter:hue-rotate(40deg)}100%{transform:none;filter:none}}
+#hero.fx-street{animation:fxStreet 300ms cubic-bezier(.08,.9,.2,1);text-shadow:0 0 22px #ffffff,0 0 55px #4da4ff}
+@keyframes fxStreet{0%{transform:translateX(-10vw) rotateY(55deg) scale(.74)}100%{transform:none}}
+#hero.fx-luxury{animation:fxLuxury 600ms ease-out;text-shadow:0 0 28px #ffe98c,0 0 90px #ffd24d}
+@keyframes fxLuxury{0%{transform:translateY(-12vh) scale(.62) rotateX(35deg)}45%{transform:translateY(.02em) scale(1.08)}100%{transform:none}}
+#hero.fx-angel{animation:fxAngel 640ms ease-out;text-shadow:0 0 24px #ffffff,0 0 88px #9df7ff}
+@keyframes fxAngel{0%{filter:brightness(2.5) blur(12px);transform:translateY(-18vh) scale(.76)}100%{filter:none;transform:none}}
+#hero.fx-devil{animation:fxDevil 440ms ease-out;text-shadow:0 0 22px #ff493f,0 0 66px #a00000}
+@keyframes fxDevil{0%{transform:translateY(9vh) scale(1.25) skewX(-8deg)}100%{transform:none}}
+#hero.fx-pain{animation:fxPain 720ms ease-out;text-shadow:0 0 24px #98a8ff}
+@keyframes fxPain{0%{opacity:.08;filter:blur(12px);transform:scale(1.35)}100%{opacity:1;filter:none;transform:none}}
+#hero.fx-rage{animation:fxRage 260ms steps(2,end);text-shadow:10px 0 #ff2a55,-10px 0 #ffd84a,0 0 55px #ff4a4a}
+@keyframes fxRage{0%{transform:translate(-8px,2px) scale(1.06)}50%{transform:translate(8px,-2px) scale(.98)}100%{transform:none}}
+#hero.fx-body{animation:fxBody 420ms ease-out;text-shadow:0 0 24px #ff6ab4,0 0 60px #ff9b6a}
+@keyframes fxBody{0%{transform:scale(1.22) rotateZ(-4deg)}100%{transform:none}}
+#hero.fx-weapon{animation:fxWeapon 220ms cubic-bezier(.12,.85,.2,1);text-shadow:0 0 20px #ffffff,0 0 58px #ff2b2b}
+@keyframes fxWeapon{0%{transform:translateZ(320px) scale(2.1);filter:blur(10px)}100%{transform:none;filter:none}}
+#hero.fx-tech{animation:fxTech 500ms steps(3,end);text-shadow:6px 0 #00f0ff,-6px 0 #9b6cff,0 0 60px #9bf1ff}
+@keyframes fxTech{0%{transform:scaleY(.6) scaleX(1.45);filter:hue-rotate(60deg)}100%{transform:none;filter:none}}
+
+
+.f{
+  transition:opacity 300ms ease,filter 300ms ease;
+  text-shadow:0 10px 35px rgba(0,0,0,.4);
+}
+#joinCard{
+  position:absolute;left:18px;bottom:18px;z-index:25;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:11px 12px;border:1px solid rgba(255,255,255,.13);
+  border-radius:18px;background:rgba(0,0,0,.30);backdrop-filter:blur(16px);
+  transition:opacity .25s,transform .25s;
+}
+#joinCard .joinTitle{font-weight:850;font-size:12px;letter-spacing:-.02em;text-align:center}
+#joinCard img{width:108px;height:108px;border-radius:10px;background:#fff;padding:6px}
+#joinCard .joinUrl{font-size:9px;opacity:.55;max-width:170px;text-align:center;overflow-wrap:anywhere}
+#joinCard.compact{opacity:.18;transform:scale(.78);transform-origin:left bottom}
+#joinCard:hover{opacity:1;transform:none}
+@media(max-width:700px){
+  #joinCard{left:10px;bottom:10px;padding:8px}
+  #joinCard img{width:82px;height:82px}
+  #joinCard .joinTitle{font-size:10px}
+}
+
+
+#resyncButton{
+  position:absolute;right:18px;bottom:18px;z-index:30;
+  min-width:132px;height:48px;padding:0 16px;
+  border:1px solid rgba(255,255,255,.18);border-radius:999px;
+  color:white;background:rgba(7,7,10,.58);backdrop-filter:blur(18px);
+  font:800 11px/1 Inter,Segoe UI,sans-serif;letter-spacing:.08em;
+  cursor:pointer;box-shadow:0 0 0 rgba(215,255,87,0);
+  transition:transform .15s,background .2s,box-shadow .2s,border-color .2s;
+}
+#resyncButton:hover{transform:scale(1.04);border-color:rgba(215,255,87,.6)}
+#resyncButton:active{transform:scale(.96)}
+#resyncButton.scanning{
+  color:#07070a;background:var(--fxA);border-color:var(--fxA);
+  animation:resyncPulse .48s ease-in-out infinite alternate;
+  box-shadow:0 0 38px var(--fxGlow)
+}
+#resyncButton.locked{
+  color:#07070a;background:#d7ff57;border-color:#d7ff57;
+  animation:resyncLocked .55s cubic-bezier(.1,.9,.2,1)
+}
+#resyncButton.failed{background:#5b1725;border-color:#ff5577;animation:resyncShake .3s linear}
+@keyframes resyncPulse{from{transform:scale(.97);filter:brightness(.85)}to{transform:scale(1.06);filter:brightness(1.25)}}
+@keyframes resyncLocked{0%{transform:scale(.7) rotate(-3deg)}55%{transform:scale(1.15) rotate(2deg)}100%{transform:none}}
+@keyframes resyncShake{0%,100%{transform:none}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+#resyncFlash{
+  position:absolute;inset:0;z-index:29;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at center,rgba(215,255,87,.35),transparent 42%);
+}
+#resyncFlash.scanning{animation:scanFlash .55s ease-in-out infinite alternate}
+#resyncFlash.locked{animation:lockFlash .65s ease-out}
+@keyframes scanFlash{from{opacity:.05;transform:scale(.92)}to{opacity:.32;transform:scale(1.06)}}
+@keyframes lockFlash{0%{opacity:.75;filter:brightness(2)}100%{opacity:0;transform:scale(1.25)}}
+@media(max-width:700px){
+  #resyncButton{right:10px;bottom:10px;min-width:108px;height:44px;padding:0 12px;font-size:9px}
+}
+
+
+#mxmResyncButton{
+  position:absolute;right:18px;bottom:74px;z-index:30;
+  min-width:154px;height:44px;padding:0 15px;
+  border:1px solid rgba(255,255,255,.18);border-radius:999px;
+  color:white;background:rgba(7,7,10,.58);backdrop-filter:blur(18px);
+  font:800 10px/1 Inter,Segoe UI,sans-serif;letter-spacing:.07em;
+  cursor:pointer;transition:transform .15s,background .2s,box-shadow .2s,border-color .2s,opacity .2s;
+}
+#mxmResyncButton:hover{transform:scale(1.04);border-color:rgba(82,218,255,.75)}
+#mxmResyncButton:active{transform:scale(.96)}
+#mxmResyncButton.disabled{opacity:.28;cursor:not-allowed}
+#mxmResyncButton.scanning{
+  color:#061019;background:#59ddff;border-color:#59ddff;
+  animation:mxmPulse .46s ease-in-out infinite alternate;
+  box-shadow:0 0 42px rgba(89,221,255,.55)
+}
+#mxmResyncButton.locked{
+  color:#041014;background:#87f4ff;border-color:#87f4ff;
+  animation:resyncLocked .55s cubic-bezier(.1,.9,.2,1)
+}
+#mxmResyncButton.failed{background:#5b1725;border-color:#ff5577;animation:resyncShake .3s linear}
+@keyframes mxmPulse{from{transform:scale(.97);filter:brightness(.85)}to{transform:scale(1.05);filter:brightness(1.25)}}
+@media(max-width:700px){
+  #mxmResyncButton{right:10px;bottom:62px;min-width:128px;height:40px;padding:0 11px;font-size:8px}
+}
+
+
+/* =========================================================
+   v15 BEAT ORACLE + RAVE COMPANION
+   ========================================================= */
+#beatLayer{
+  position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  opacity:.95;
+}
+#beatHalo{
+  position:absolute;left:50%;top:50%;
+  width:34vmin;height:34vmin;border-radius:50%;
+  transform:translate(-50%,-50%) scale(.75);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:
+    0 0 55px var(--fxGlow),
+    inset 0 0 55px color-mix(in srgb,var(--fxA),transparent 75%);
+  opacity:.12;
+}
+#beatGrid{
+  position:absolute;inset:-20%;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 9.9%,rgba(255,255,255,.025) 10%),
+    repeating-linear-gradient(0deg,transparent 0 9.9%,rgba(255,255,255,.018) 10%);
+  transform:perspective(700px) rotateX(66deg) translateY(38%);
+  transform-origin:50% 70%;
+  opacity:.18;
+}
+.beat-ring{
+  position:absolute;left:50%;top:50%;width:20vmin;height:20vmin;
+  border:2px solid var(--fxA);border-radius:50%;
+  transform:translate(-50%,-50%);
+  animation:beatRing 660ms cubic-bezier(.08,.72,.18,1) forwards;
+  box-shadow:0 0 28px var(--fxGlow);
+}
+@keyframes beatRing{
+  0%{opacity:.8;transform:translate(-50%,-50%) scale(.35)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(4.8)}
+}
+#stage.beat-hit #beatHalo{animation:beatHaloHit 240ms ease-out}
+#stage.downbeat-hit #beatHalo{animation:downbeatHaloHit 420ms cubic-bezier(.08,.9,.2,1)}
+@keyframes beatHaloHit{
+  0%{opacity:.58;transform:translate(-50%,-50%) scale(.78)}
+  100%{opacity:.13;transform:translate(-50%,-50%) scale(1.15)}
+}
+@keyframes downbeatHaloHit{
+  0%{opacity:.9;transform:translate(-50%,-50%) scale(.55);filter:brightness(2)}
+  100%{opacity:.14;transform:translate(-50%,-50%) scale(1.38);filter:none}
+}
+#beatReadout{
+  position:absolute;right:18px;top:62px;z-index:21;
+  font:800 9px/1.2 Inter,Segoe UI,sans-serif;letter-spacing:.08em;
+  opacity:.38;text-align:right;pointer-events:none;
+}
+
+/* Companion chrome: only appears away from localhost. */
+#companionControls{
+  display:none;position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  z-index:50;padding:5px;border-radius:999px;
+  background:rgba(0,0,0,.34);border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(18px);gap:4px;
+}
+#companionControls button{
+  height:38px;padding:0 17px;border:0;border-radius:999px;
+  color:rgba(255,255,255,.6);background:transparent;
+  font:850 10px/1 Inter,Segoe UI,sans-serif;letter-spacing:.09em;
+}
+#companionControls button.active{
+  color:#07070a;background:white;
+}
+#companionRave{
+  display:none;position:absolute;inset:0;z-index:5;pointer-events:none;
+  align-items:center;justify-content:center;flex-direction:column;
+}
+#companionOrb{
+  width:min(48vw,48vh);height:min(48vw,48vh);border-radius:50%;
+  background:
+    radial-gradient(circle at 38% 34%,rgba(255,255,255,.26),transparent 9%),
+    radial-gradient(circle,var(--fxA),color-mix(in srgb,var(--fxB),transparent 15%) 48%,transparent 70%);
+  box-shadow:0 0 80px var(--fxGlow),0 0 180px color-mix(in srgb,var(--fxB),transparent 45%);
+  opacity:.72;transform:scale(.72);
+  transition:background .4s ease;
+}
+#companionOrb.hit{animation:orbBeat 300ms cubic-bezier(.08,.9,.2,1)}
+#companionOrb.downbeat{animation:orbDownbeat 440ms cubic-bezier(.08,.9,.2,1)}
+@keyframes orbBeat{0%{transform:scale(.78)}42%{transform:scale(1.08)}100%{transform:scale(.84)}}
+@keyframes orbDownbeat{0%{transform:scale(.65) rotate(-5deg);filter:brightness(2.1)}55%{transform:scale(1.18) rotate(3deg)}100%{transform:scale(.84);filter:none}}
+#companionMeta{
+  margin-top:24px;text-align:center;font-weight:850;letter-spacing:-.03em;
+  text-shadow:0 5px 30px rgba(0,0,0,.55)
+}
+#companionTrack{font-size:clamp(18px,3.6vw,40px)}
+#companionBeatText{font-size:11px;opacity:.46;margin-top:7px;letter-spacing:.12em}
+
+/* Guest/companion transformation. */
+body.companion #hud,
+body.companion #joinCard,
+body.companion #status,
+body.companion #resyncButton,
+body.companion #mxmResyncButton,
+body.companion #beatReadout{
+  display:none !important;
+}
+body.companion #companionControls{display:flex}
+body.companion #prev{top:17%;opacity:.16}
+body.companion #next{bottom:15%;opacity:.16}
+body.companion #hero{font-size:clamp(54px,15vw,220px)}
+body.companion.mode-rave #lyrics{opacity:0;pointer-events:none}
+body.companion.mode-rave #companionRave{display:flex}
+body.companion.mode-karaoke #lyrics{opacity:1}
+body.companion.mode-karaoke #companionRave{display:none}
+
+@media(max-width:700px){
+  #companionControls{top:10px}
+  #companionControls button{height:36px;padding:0 14px;font-size:9px}
+}
+
+
+#privateAudioBar{
+  display:none;position:absolute;left:50%;bottom:13px;transform:translateX(-50%);
+  z-index:60;gap:7px;align-items:center;padding:6px;
+  border:1px solid rgba(255,255,255,.13);border-radius:999px;
+  background:rgba(0,0,0,.4);backdrop-filter:blur(18px)
+}
+#privateAudioButton,#privateAudioMute{
+  min-height:42px;border:0;border-radius:999px;padding:0 15px;
+  font:850 9px/1 Inter,Segoe UI,sans-serif;letter-spacing:.075em;
+  color:white;background:rgba(255,255,255,.10)
+}
+#privateAudioButton.active{color:#07100d;background:#7dffbd;box-shadow:0 0 30px rgba(125,255,189,.28)}
+#privateAudioButton.connecting{color:#071018;background:#72dbff;animation:audioConnect .45s ease-in-out infinite alternate}
+#privateAudioButton.failed{background:#5b1725;color:white}
+#privateAudioMute{display:none;min-width:46px;padding:0 12px}
+#privateAudioLatency{font:750 8px/1 Inter,Segoe UI,sans-serif;opacity:.45;padding-right:8px;white-space:nowrap}
+@keyframes audioConnect{from{filter:brightness(.8);transform:scale(.98)}to{filter:brightness(1.25);transform:scale(1.03)}}
+body.companion #privateAudioBar{display:flex}
+@media(max-width:700px){
+  #privateAudioBar{bottom:9px;max-width:calc(100vw - 16px)}
+  #privateAudioButton{padding:0 12px;font-size:8px}
+  #privateAudioLatency{display:none}
+}
+
+
+/* v17 cinematic companions */
+#companionScene{display:none;position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+body.companion #companionScene{display:block}
+#cinemaBackdrop{position:absolute;inset:-14%;background:
+radial-gradient(circle at 18% 22%,color-mix(in srgb,var(--fxA),transparent 76%),transparent 28%),
+radial-gradient(circle at 82% 72%,color-mix(in srgb,var(--fxB),transparent 76%),transparent 30%),
+conic-gradient(from 180deg at 50% 50%,rgba(255,255,255,.018),transparent 20%,rgba(255,255,255,.025),transparent 55%);
+filter:blur(22px) saturate(1.35);animation:cinemaDrift 10s ease-in-out infinite alternate;opacity:.95}
+@keyframes cinemaDrift{from{transform:translate3d(-2%,1%,0) scale(1.05) rotate(-2deg)}to{transform:translate3d(2%,-2%,0) scale(1.13) rotate(2deg)}}
+#cinemaVignette{position:absolute;inset:0;background:radial-gradient(circle at center,transparent 28%,rgba(0,0,0,.18) 58%,rgba(0,0,0,.72) 100%),linear-gradient(180deg,rgba(0,0,0,.35),transparent 22%,transparent 78%,rgba(0,0,0,.55))}
+#cinemaNoise{position:absolute;inset:-40%;opacity:.045;background-image:repeating-radial-gradient(circle at 20% 30%,rgba(255,255,255,.55) 0 1px,transparent 1px 3px);background-size:5px 5px;animation:noiseMove .32s steps(2,end) infinite;mix-blend-mode:soft-light}
+@keyframes noiseMove{from{transform:translate3d(-1%,0,0)}to{transform:translate3d(1%,1%,0)}}
+#cinemaBars{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.028) 0 1px,transparent 1px 8px);opacity:.09;mix-blend-mode:overlay}
+#cinemaCenter{position:absolute;left:50%;top:50%;width:min(72vw,72vh);height:min(72vw,72vh);transform:translate(-50%,-50%);border-radius:50%}
+#cinemaRingA,#cinemaRingB,#cinemaRingC{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,.09);box-shadow:0 0 48px var(--fxGlow),inset 0 0 52px color-mix(in srgb,var(--fxA),transparent 80%)}
+#cinemaRingB{inset:12%;opacity:.55}#cinemaRingC{inset:27%;opacity:.35}
+#companionScene.beat-cinematic #cinemaRingA{animation:ringHitA .55s cubic-bezier(.08,.9,.2,1)}
+#companionScene.downbeat-cinematic #cinemaRingA{animation:ringDownA .72s cubic-bezier(.08,.9,.2,1)}
+@keyframes ringHitA{0%{transform:scale(.72);opacity:.75}100%{transform:scale(1.12);opacity:.13}}
+@keyframes ringDownA{0%{transform:scale(.55);opacity:1;filter:brightness(2)}100%{transform:scale(1.28);opacity:.12;filter:none}}
+#cinemaBeamFan{position:absolute;inset:0;overflow:hidden;mask-image:radial-gradient(circle at 50% 50%,#000 15%,transparent 74%)}
+.cinemaBeam{position:absolute;left:50%;top:50%;width:12%;height:80%;transform-origin:50% 0;opacity:.08;background:linear-gradient(180deg,color-mix(in srgb,var(--fxA),white 18%),transparent 80%);filter:blur(8px)}
+.cinemaBeam:nth-child(1){transform:rotate(18deg)}.cinemaBeam:nth-child(2){transform:rotate(75deg)}.cinemaBeam:nth-child(3){transform:rotate(132deg)}.cinemaBeam:nth-child(4){transform:rotate(198deg)}.cinemaBeam:nth-child(5){transform:rotate(255deg)}.cinemaBeam:nth-child(6){transform:rotate(312deg)}
+#cinemaParticles{position:absolute;inset:0;overflow:hidden}
+.cinemaParticle{position:absolute;border-radius:999px;background:var(--fxA);box-shadow:0 0 12px var(--fxGlow);animation:cinemaParticleFly var(--dur) ease-out forwards}
+@keyframes cinemaParticleFly{from{opacity:.95;transform:translate3d(0,0,0) scale(1)}to{opacity:0;transform:translate3d(var(--dx),var(--dy),0) scale(.1)}}
+#companionHeroPanel{display:none;position:absolute;left:50%;top:50%;z-index:8;transform:translate(-50%,-50%);pointer-events:none;text-align:center;width:min(88vw,900px)}
+body.companion.mode-rave #companionHeroPanel{display:block}
+#companionNow{font-weight:950;letter-spacing:-.065em;line-height:.86;text-wrap:balance;text-shadow:0 10px 55px rgba(0,0,0,.5),0 0 55px var(--fxGlow);transform-style:preserve-3d}
+#companionSub{margin-top:16px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;opacity:.42}
+#companionMicro{margin-top:8px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;opacity:.24}
+
+/* PHONE */
+body.companion.device-phone #companionControls{top:10px;width:calc(100% - 20px);justify-content:center;padding:4px}
+body.companion.device-phone #companionControls button{flex:1;height:40px;padding:0 10px;font-size:9px}
+body.companion.device-phone #privateAudioBar{left:10px;right:10px;bottom:10px;transform:none;max-width:none;justify-content:center}
+body.companion.device-phone #privateAudioButton{flex:1;min-width:0}
+body.companion.device-phone #companionHeroPanel{top:47%;width:92vw}
+body.companion.device-phone #companionNow{font-size:clamp(54px,20vw,126px)}
+body.companion.device-phone #companionSub{font-size:10px;margin-top:13px}
+body.companion.device-phone #companionMicro{font-size:8px}
+body.companion.device-phone #cinemaCenter{width:88vw;height:88vw}
+body.companion.device-phone #companionOrb{width:66vw;height:66vw}
+body.companion.device-phone.mode-karaoke #lyrics{transform:scale(.91);transform-origin:center}
+body.companion.device-phone.mode-karaoke #hero{font-size:clamp(48px,15vw,112px)}
+body.companion.device-phone.mode-karaoke #prev,body.companion.device-phone.mode-karaoke #next{width:92vw;font-size:clamp(14px,4vw,24px)}
+
+/* TABLET */
+body.companion.device-tablet #companionControls{top:18px;padding:6px}
+body.companion.device-tablet #companionControls button{height:42px;padding:0 22px;font-size:10px}
+body.companion.device-tablet #privateAudioBar{bottom:18px}
+body.companion.device-tablet #companionHeroPanel{width:82vw;top:49%}
+body.companion.device-tablet #companionNow{font-size:clamp(88px,13vw,190px)}
+body.companion.device-tablet #companionSub{font-size:12px}
+body.companion.device-tablet #companionMicro{font-size:9px}
+body.companion.device-tablet #cinemaCenter{width:min(68vw,68vh);height:min(68vw,68vh)}
+body.companion.device-tablet #companionOrb{width:min(54vw,54vh);height:min(54vw,54vh)}
+body.companion.device-tablet.mode-karaoke #hero{font-size:clamp(74px,12vw,190px)}
+body.companion.device-tablet.mode-karaoke #prev,body.companion.device-tablet.mode-karaoke #next{width:78vw}
+
+/* DESKTOP / TV GUEST */
+body.companion.device-desktop #companionControls{top:18px}
+body.companion.device-desktop #privateAudioBar{bottom:18px}
+body.companion.device-desktop #companionHeroPanel{width:76vw}
+body.companion.device-desktop #companionNow{font-size:clamp(100px,10vw,220px)}
+body.companion.device-desktop #cinemaCenter{width:min(58vw,68vh);height:min(58vw,68vh)}
+body.companion.device-desktop #companionOrb{width:min(42vw,50vh);height:min(42vw,50vh)}
+
+@media (orientation:landscape) and (max-height:600px){
+ body.companion.device-phone #companionControls{left:12px;top:12px;transform:none;width:auto;flex-direction:column;border-radius:22px}
+ body.companion.device-phone #companionControls button{width:98px;height:38px}
+ body.companion.device-phone #privateAudioBar{left:auto;right:12px;bottom:12px;width:auto}
+ body.companion.device-phone #companionHeroPanel{top:50%;left:50%;width:66vw}
+ body.companion.device-phone #companionNow{font-size:clamp(46px,11vw,106px)}
+ body.companion.device-phone #cinemaCenter{width:58vh;height:58vh}
+}
+@media (prefers-reduced-motion:reduce){#cinemaBackdrop,#cinemaNoise{animation:none!important}.cinemaParticle{display:none!important}}
+
+
+/* =========================================================
+   v18 SAMSUNG TV ADAPTIVE COMPANION
+   ========================================================= */
+body.samsung-tv{
+  cursor:none;
+  --tv-safe-x:5vw;
+  --tv-safe-y:4vh;
+}
+body.samsung-tv #companionControls{
+  top:var(--tv-safe-y);
+  transform:translateX(-50%) scale(1.08);
+}
+body.samsung-tv #privateAudioBar{display:none!important}
+body.samsung-tv #companionHeroPanel{width:84vw}
+body.samsung-tv #companionNow{font-size:clamp(96px,10vw,208px)}
+body.samsung-tv #companionSub{font-size:14px}
+body.samsung-tv #companionMicro{font-size:10px;opacity:.34}
+body.samsung-tv #cinemaCenter{width:min(58vw,66vh);height:min(58vw,66vh)}
+body.samsung-tv #companionOrb{width:min(42vw,52vh);height:min(42vw,52vh)}
+
+/* Standard Samsung: modern Tizen / strong browser */
+body.samsung-tv.tv-standard #cinemaNoise{opacity:.022}
+body.samsung-tv.tv-standard #cinemaBars{opacity:.06}
+body.samsung-tv.tv-standard .cinemaBeam{filter:blur(5px);opacity:.06}
+
+/* Lite Samsung: remove expensive compositor effects */
+body.samsung-tv.tv-lite #cinemaNoise{display:none}
+body.samsung-tv.tv-lite #cinemaBars{opacity:.035}
+body.samsung-tv.tv-lite #cinemaBackdrop{filter:none;animation-duration:18s;opacity:.72}
+body.samsung-tv.tv-lite .cinemaBeam{filter:none;opacity:.045}
+body.samsung-tv.tv-lite #cinemaRingA,
+body.samsung-tv.tv-lite #cinemaRingB,
+body.samsung-tv.tv-lite #cinemaRingC{
+  box-shadow:none;
+}
+body.samsung-tv.tv-lite .cinemaParticle{box-shadow:none}
+body.samsung-tv.tv-lite #beatGrid{display:none}
+body.samsung-tv.tv-lite #companionNow{text-shadow:0 8px 28px rgba(0,0,0,.5)}
+
+/* Ultra-lite: 2015-2018 era / weak benchmark */
+body.samsung-tv.tv-ultralite #cinemaNoise,
+body.samsung-tv.tv-ultralite #cinemaBars,
+body.samsung-tv.tv-ultralite #cinemaBeamFan,
+body.samsung-tv.tv-ultralite #cinemaParticles,
+body.samsung-tv.tv-ultralite #beatGrid,
+body.samsung-tv.tv-ultralite #semanticLayer,
+body.samsung-tv.tv-ultralite #particleLayer,
+body.samsung-tv.tv-ultralite #echoLayer{
+  display:none!important;
+}
+body.samsung-tv.tv-ultralite #cinemaBackdrop{
+  animation:none!important;
+  filter:none!important;
+  inset:0;
+  opacity:.55;
+  background:
+    radial-gradient(circle at 50% 48%,var(--fxB),transparent 50%),
+    #050507;
+}
+body.samsung-tv.tv-ultralite #cinemaVignette{
+  background:radial-gradient(circle at center,transparent 32%,rgba(0,0,0,.72) 100%);
+}
+body.samsung-tv.tv-ultralite #cinemaRingA{
+  display:block;border:3px solid var(--fxA);box-shadow:none;
+}
+body.samsung-tv.tv-ultralite #cinemaRingB,
+body.samsung-tv.tv-ultralite #cinemaRingC{display:none}
+body.samsung-tv.tv-ultralite #companionNow{
+  text-shadow:none;
+  font-size:clamp(100px,10vw,200px);
+}
+body.samsung-tv.tv-ultralite #companionSub{opacity:.6}
+body.samsung-tv.tv-ultralite #companionOrb{
+  box-shadow:none;
+  background:var(--fxA);
+  opacity:.22;
+}
+body.samsung-tv.tv-ultralite #hero,
+body.samsung-tv.tv-ultralite #hero .fill{
+  filter:none!important;text-shadow:none!important;
+}
+body.samsung-tv.tv-ultralite *{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+/* TV diagnostics pill */
+#tvProfileBadge{
+  display:none;
+  position:absolute;right:4vw;top:4vh;z-index:52;
+  padding:9px 13px;border:1px solid rgba(255,255,255,.12);
+  border-radius:999px;background:rgba(0,0,0,.28);
+  font:800 9px/1 Inter,Arial,sans-serif;letter-spacing:.08em;
+  opacity:.45;
+}
+body.samsung-tv #tvProfileBadge{display:block}
+
+</style></head><body>
+<div id="stage">
+  <div id="beatLayer"><div id="beatGrid"></div><div id="beatHalo"></div></div>
+  <div id="companionScene">
+    <div id="cinemaBackdrop"></div><div id="cinemaVignette"></div><div id="cinemaNoise"></div><div id="cinemaBars"></div>
+    <div id="cinemaBeamFan"><i class="cinemaBeam"></i><i class="cinemaBeam"></i><i class="cinemaBeam"></i><i class="cinemaBeam"></i><i class="cinemaBeam"></i><i class="cinemaBeam"></i></div>
+    <div id="cinemaParticles"></div>
+    <div id="cinemaCenter"><div id="cinemaRingA"></div><div id="cinemaRingB"></div><div id="cinemaRingC"></div></div>
+  </div>
+  <div id="resyncFlash"></div>
+  <div id="semanticLayer"></div>
+  <div id="beamLayer"><i id="beam1" class="fx-beam"></i><i id="beam2" class="fx-beam"></i><i id="beam3" class="fx-beam"></i></div>
+  <div id="particleLayer"></div>
+  <div id="echoLayer"></div>
+  <audio id="privateAudioElement" autoplay playsinline></audio>
+  <div id="privateAudioBar">
+    <button id="privateAudioButton" type="button">🎧 PRIVATE AUDIO</button>
+    <button id="privateAudioMute" type="button">🔊</button>
+    <span id="privateAudioLatency">WebRTC · LIVE</span>
+  </div>
+  <div id="tvProfileBadge">SAMSUNG TV · DETECTING</div>
+  <div id="companionControls">
+    <button id="modeRave" type="button" class="active">RAVE</button>
+    <button id="modeKaraoke" type="button">KARAOKE</button>
+  </div>
+  <div id="companionHeroPanel"><div id="companionNow">RAVE</div><div id="companionSub">waiting for the beat</div><div id="companionMicro">COMPANION MODE</div></div>
+  <div id="companionRave">
+    <div id="companionOrb"></div>
+    <div id="companionMeta">
+      <div id="companionTrack">waiting for the rave…</div>
+      <div id="companionBeatText">BEAT ORACLE ACQUIRING</div>
+    </div>
+  </div>
+  <div id="hud">
+    <div><div id="title">Waiting for Spotify…</div><div id="artist"></div></div>
+    <div class="badges"><div id="transport" class="badge">ORACLE</div><div id="lyricsBadge" class="badge">NO LYRICS</div><div id="epoch" class="badge">T0 S0 P0</div></div>
+  </div>
+  <div id="lyrics"><div id="prev"></div><div id="future"></div><div id="hero">♫</div><div id="next"></div></div>
+  <div id="joinCard">
+    <div class="joinTitle">wanna join the rave? scan me!</div>
+    <img src="/join-qr.png" alt="QR code to open LyricFestival on the local network">
+    <div id="joinUrl" class="joinUrl">lyricfestival.local:8765</div>
+  </div>
+  <button id="mxmResyncButton" type="button" title="Calibrate Musixmatch timestamps against the actual vocals">🎯 SYNC MUSIXMATCH</button>
+  <button id="resyncButton" type="button" title="Force Whisper to find the current lyric position">⚡ FORCE RESYNC</button>
+  <div id="beatReadout">BEAT ORACLE · acquiring</div>
+  <div id="status">connecting websocket…</div>
+</div>
+
+<script src="/static/semantic_lexicon.js"></script>
+<script>
+(()=>{
+const $=s=>document.querySelector(s),hero=$('#hero'),future=$('#future'),prev=$('#prev'),next=$('#next'),
+title=$('#title'),artist=$('#artist'),status=$('#status'),transport=$('#transport'),lyricsBadge=$('#lyricsBadge'),epoch=$('#epoch'),stage=$('#stage'),semanticLayer=$('#semanticLayer'),particleLayer=$('#particleLayer'),echoLayer=$('#echoLayer'),beam1=$('#beam1'),beam2=$('#beam2'),beam3=$('#beam3'),joinUrl=$('#joinUrl'),resyncButton=$('#resyncButton'),mxmResyncButton=$('#mxmResyncButton'),resyncFlash=$('#resyncFlash'),
+beatLayer=$('#beatLayer'),beatHalo=$('#beatHalo'),beatReadout=$('#beatReadout'),
+modeRave=$('#modeRave'),modeKaraoke=$('#modeKaraoke'),companionOrb=$('#companionOrb'),
+companionTrack=$('#companionTrack'),companionBeatText=$('#companionBeatText'),
+privateAudioElement=$('#privateAudioElement'),privateAudioButton=$('#privateAudioButton'),
+privateAudioMute=$('#privateAudioMute'),privateAudioLatency=$('#privateAudioLatency'),companionScene=$('#companionScene'),cinemaParticles=$('#cinemaParticles'),companionNow=$('#companionNow'),companionSub=$('#companionSub'),companionMicro=$('#companionMicro'),tvProfileBadge=$('#tvProfileBadge');
+
+let media={position_ms:0,local_anchor_ms:performance.now(),playing:false,track_epoch:0,seek_epoch:0,playback_epoch:0};
+let lines=[],timingState={},generation=0,lastLine=-1,lastWord=-1,heroFill=null;
+let beatState={active:false,bpm:0,bar_beat:0,confidence:0,intensity:0};
+const IS_HOST=['localhost','127.0.0.1','::1'].includes(location.hostname);
+let companionMode='rave';
+
+
+
+let privatePC=null;
+let privateAudioActive=false;
+let privateAudioMuted=false;
+
+function waitIceComplete(pc,timeoutMs=1200){
+  if(pc.iceGatheringState==='complete')return Promise.resolve();
+  return new Promise(resolve=>{
+    const timer=setTimeout(done,timeoutMs);
+    function done(){
+      clearTimeout(timer);
+      pc.removeEventListener('icegatheringstatechange',onchange);
+      resolve();
+    }
+    function onchange(){
+      if(pc.iceGatheringState==='complete')done();
+    }
+    pc.addEventListener('icegatheringstatechange',onchange);
+  });
+}
+
+async function stopPrivateAudio(){
+  privateAudioActive=false;
+  privateAudioButton.classList.remove('active','connecting','failed');
+  privateAudioButton.textContent='🎧 PRIVATE AUDIO';
+  privateAudioMute.style.display='none';
+  privateAudioElement.pause();
+  privateAudioElement.srcObject=null;
+  if(privatePC){
+    try{privatePC.close()}catch(e){}
+    privatePC=null;
+  }
+}
+
+async function startPrivateAudio(){
+  if(IS_HOST)return;
+  if(privateAudioActive){
+    await stopPrivateAudio();
+    return;
+  }
+
+  privateAudioButton.classList.remove('failed');
+  privateAudioButton.classList.add('connecting');
+  privateAudioButton.textContent='🎧 CONNECTING…';
+
+  try{
+    const pc=new RTCPeerConnection({
+      // LAN peers do not need a public STUN server. Avoiding external ICE
+      // removes an unnecessary dependency and keeps setup local.
+      iceServers:[]
+    });
+    privatePC=pc;
+
+    pc.addTransceiver('audio',{direction:'recvonly'});
+
+    pc.ontrack=async ev=>{
+      const stream=ev.streams?.[0]||new MediaStream([ev.track]);
+      privateAudioElement.srcObject=stream;
+      privateAudioElement.muted=false;
+      privateAudioElement.volume=1;
+      try{await privateAudioElement.play()}catch(e){}
+    };
+
+    pc.onconnectionstatechange=()=>{
+      if(pc.connectionState==='connected'){
+        privateAudioActive=true;
+        privateAudioButton.classList.remove('connecting','failed');
+        privateAudioButton.classList.add('active');
+        privateAudioButton.textContent='🎧 PRIVATE AUDIO ON';
+        privateAudioMute.style.display='block';
+        privateAudioLatency.textContent='WebRTC · ULTRA LOW LATENCY';
+      }else if(['failed','closed'].includes(pc.connectionState)){
+        if(privateAudioActive)stopPrivateAudio();
+        else{
+          privateAudioButton.classList.remove('connecting');
+          privateAudioButton.classList.add('failed');
+          privateAudioButton.textContent='✕ AUDIO FAILED';
+          setTimeout(()=>{
+            if(!privateAudioActive){
+              privateAudioButton.classList.remove('failed');
+              privateAudioButton.textContent='🎧 PRIVATE AUDIO';
+            }
+          },1800);
+        }
+      }
+    };
+
+    const offer=await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await waitIceComplete(pc);
+
+    const r=await fetch('/api/webrtc/offer',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        sdp:pc.localDescription.sdp,
+        type:pc.localDescription.type
+      })
+    });
+    const d=await r.json();
+    if(!r.ok||!d.ok)throw new Error(d.message||d.error||'WebRTC offer failed');
+
+    await pc.setRemoteDescription({type:d.type,sdp:d.sdp});
+
+    // play() occurs in the same user-initiated workflow, helping mobile
+    // autoplay policies.
+    try{await privateAudioElement.play()}catch(e){}
+
+  }catch(e){
+    try{if(privatePC)privatePC.close()}catch(_){}
+    privatePC=null;
+    privateAudioActive=false;
+    privateAudioButton.classList.remove('connecting');
+    privateAudioButton.classList.add('failed');
+    privateAudioButton.textContent='✕ AUDIO FAILED';
+    privateAudioLatency.textContent=String(e?.message||e).slice(0,70);
+    setTimeout(()=>{
+      if(!privateAudioActive){
+        privateAudioButton.classList.remove('failed');
+        privateAudioButton.textContent='🎧 PRIVATE AUDIO';
+        privateAudioLatency.textContent='WebRTC · LIVE';
+      }
+    },2200);
+  }
+}
+
+privateAudioButton.addEventListener('click',startPrivateAudio);
+privateAudioMute.addEventListener('click',()=>{
+  privateAudioMuted=!privateAudioMuted;
+  privateAudioElement.muted=privateAudioMuted;
+  privateAudioMute.textContent=privateAudioMuted?'🔇':'🔊';
+});
+
+window.addEventListener('pagehide',()=>{
+  try{if(privatePC)privatePC.close()}catch(e){}
+});
+
+
+
+function isSamsungTV(){
+  const ua=navigator.userAgent||'';
+  return /SMART-TV/i.test(ua) && (/Tizen/i.test(ua)||/Samsung/i.test(ua)||/SamsungBrowser/i.test(ua))
+      || (/SmartHub/i.test(ua)&&/SmartTV/i.test(ua));
+}
+function samsungTizenVersion(){
+  const ua=navigator.userAgent||'';
+  const m=ua.match(/Tizen[\/\s]([0-9.]+)/i);
+  return m?parseFloat(m[1]):0;
+}
+function samsungModelYearFromTizen(v){
+  // Approximate mapping from Samsung's documented platform table.
+  const map={10:2026,9:2025,8:2024,7:2023,6.5:2022,6:2021,5.5:2020,5:2019,4:2018,3:2017,2.4:2016,2.3:2015};
+  return map[v]||0;
+}
+async function querySamsungCapabilities(){
+  const out={
+    samsung:isSamsungTV(),
+    tizenVersion:samsungTizenVersion(),
+    year:0,model:'',firmware:'',
+    width:screen.width||innerWidth,
+    height:screen.height||innerHeight,
+    dpr:window.devicePixelRatio||1,
+    cores:navigator.hardwareConcurrency||0,
+    memoryGB:navigator.deviceMemory||0,
+    tizenApis:false
+  };
+  out.year=samsungModelYearFromTizen(out.tizenVersion);
+
+  // These APIs are normally available to packaged Tizen apps. The ordinary
+  // browser may not expose them; every probe is therefore optional.
+  try{
+    if(window.webapis&&webapis.productinfo){
+      out.tizenApis=true;
+      try{out.model=String(webapis.productinfo.getModel()||'')}catch(e){}
+      try{out.firmware=String(webapis.productinfo.getFirmware()||'')}catch(e){}
+    }
+  }catch(e){}
+
+  try{
+    if(window.tizen&&tizen.systeminfo){
+      out.tizenApis=true;
+      try{
+        const v=tizen.systeminfo.getCapability('http://tizen.org/feature/platform.version');
+        if(v)out.tizenVersion=parseFloat(v)||out.tizenVersion;
+      }catch(e){}
+      try{
+        await new Promise(resolve=>{
+          tizen.systeminfo.getPropertyValue('MEMORY',m=>{
+            // MEMORY exposes status rather than guaranteed absolute RAM on
+            // all profiles; preserve it for diagnostics if present.
+            out.memoryStatus=m?.status||'';
+            resolve();
+          },()=>resolve());
+        });
+      }catch(e){}
+      try{
+        await new Promise(resolve=>{
+          tizen.systeminfo.getPropertyValue('DISPLAY',d=>{
+            out.displayWidth=d?.resolutionWidth||out.width;
+            out.displayHeight=d?.resolutionHeight||out.height;
+            resolve();
+          },()=>resolve());
+        });
+      }catch(e){}
+    }
+  }catch(e){}
+
+  out.year=samsungModelYearFromTizen(out.tizenVersion)||out.year;
+  return out;
+}
+async function benchmarkSamsungTV(){
+  // Tiny compositor benchmark: only ~450 ms, no huge DOM allocation.
+  return await new Promise(resolve=>{
+    const probe=document.createElement('div');
+    probe.style.cssText='position:absolute;left:-50px;top:-50px;width:20px;height:20px;background:#fff;will-change:transform;pointer-events:none';
+    document.body.appendChild(probe);
+    let frames=0,start=performance.now(),last=start;
+    function tick(now){
+      frames++;
+      probe.style.transform=`translateX(${frames%20}px)`;
+      last=now;
+      if(now-start<450){
+        requestAnimationFrame(tick);
+      }else{
+        probe.remove();
+        const fps=frames/((last-start)/1000);
+        resolve(Math.max(1,Math.min(120,fps)));
+      }
+    }
+    requestAnimationFrame(tick);
+  });
+}
+async function configureSamsungTV(){
+  if(!isSamsungTV())return null;
+  document.body.classList.add('samsung-tv');
+
+  const caps=await querySamsungCapabilities();
+  let fps=0;
+  try{fps=await benchmarkSamsungTV()}catch(e){}
+
+  let score=0;
+  const v=Number(caps.tizenVersion||0);
+  if(v>=8)score+=5;
+  else if(v>=6.5)score+=4;
+  else if(v>=5.5)score+=3;
+  else if(v>=4)score+=2;
+  else if(v>0)score+=1;
+
+  if(fps>=52)score+=4;
+  else if(fps>=42)score+=3;
+  else if(fps>=30)score+=2;
+  else score+=0;
+
+  if(Number(caps.cores||0)>=4)score+=1;
+  if(Number(caps.memoryGB||0)>=2)score+=1;
+
+  let profile='ultralite';
+  if(score>=8)profile='standard';
+  else if(score>=5)profile='lite';
+
+  // Old known engines are forced down regardless of a lucky short benchmark.
+  if(v>0&&v<=4)profile='ultralite';
+  if(v>=5&&v<6.5&&profile==='standard')profile='lite';
+
+  document.body.classList.remove('tv-standard','tv-lite','tv-ultralite');
+  document.body.classList.add(`tv-${profile}`);
+  document.body.classList.remove('device-phone','device-tablet','device-desktop');
+  document.body.classList.add('device-desktop');
+  document.documentElement.dataset.device='samsung-tv';
+  document.documentElement.dataset.tvProfile=profile;
+
+  companionMicro.textContent=`SAMSUNG TV · ${profile.toUpperCase()}`;
+  tvProfileBadge.textContent=`SAMSUNG TV · ${profile.toUpperCase()}${caps.year?' · '+caps.year:''}${fps?' · '+Math.round(fps)+' FPS':''}`;
+  tvProfileBadge.title=[
+    caps.model&&`Model ${caps.model}`,
+    caps.firmware&&`FW ${caps.firmware}`,
+    caps.tizenVersion&&`Tizen ${caps.tizenVersion}`,
+    `${caps.width}×${caps.height}`,
+    caps.cores&&`${caps.cores} cores`,
+    caps.memoryGB&&`${caps.memoryGB}GB memory`,
+    `${Math.round(fps)}fps benchmark`
+  ].filter(Boolean).join(' · ');
+
+  window.LF_TV_CAPS={...caps,fps,profile};
+  return window.LF_TV_CAPS;
+}
+function detectCompanionDevice(){
+  if(isSamsungTV())return'desktop';
+  const ua=navigator.userAgent||'';
+  const coarse=matchMedia('(pointer: coarse)').matches;
+  const minSide=Math.min(screen.width||innerWidth,screen.height||innerHeight);
+  const maxSide=Math.max(screen.width||innerWidth,screen.height||innerHeight);
+  const ipad=/iPad/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const mobileUA=/iPhone|iPod|Android.*Mobile|Windows Phone|Mobile/i.test(ua);
+  if(ipad||(/Android/i.test(ua)&&!/Mobile/i.test(ua))||(coarse&&minSide>=600&&maxSide>=900))return'tablet';
+  if(mobileUA||(coarse&&minSide<600))return'phone';
+  return'desktop';
+}
+function applyDeviceClass(){
+  if(isSamsungTV()&&document.documentElement.dataset.tvProfile)return;
+  const d=detectCompanionDevice();
+  document.body.classList.remove('device-phone','device-tablet','device-desktop');
+  document.body.classList.add(`device-${d}`);
+  document.documentElement.dataset.device=d;
+  companionMicro.textContent=d==='phone'?'PHONE COMPANION':d==='tablet'?'TABLET COMPANION':'RAVE DISPLAY';
+}
+let resizeDeviceTimer=0;
+addEventListener('resize',()=>{clearTimeout(resizeDeviceTimer);resizeDeviceTimer=setTimeout(applyDeviceClass,160)});
+
+function cinemaParticleBurst(power=.6,down=false){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const d=document.documentElement.dataset.device||'desktop';
+  let count=d==='phone'?10:d==='tablet'?18:26;
+  if(document.body.classList.contains('tv-ultralite'))return;
+  if(document.body.classList.contains('tv-lite'))count=Math.min(count,8);
+  count=Math.round(count*(.55+power*.85)*(down?1.45:1));
+  for(let i=0;i<count;i++){
+    const p=document.createElement('i');p.className='cinemaParticle';
+    const size=(down?2.4:1.4)+Math.random()*(down?6:4);
+    p.style.width=p.style.height=`${size}px`;
+    p.style.left=`${42+Math.random()*16}%`;p.style.top=`${42+Math.random()*16}%`;
+    const a=Math.random()*Math.PI*2,dist=(d==='phone'?24:d==='tablet'?32:40)*(.5+Math.random())*(down?1.25:1);
+    p.style.setProperty('--dx',`${Math.cos(a)*dist}vw`);p.style.setProperty('--dy',`${Math.sin(a)*dist}vh`);
+    p.style.setProperty('--dur',`${420+Math.random()*520}ms`);
+    cinemaParticles.appendChild(p);setTimeout(()=>p.remove(),1100);
+  }
+}
+function cinematicBeatHit(b){
+  if(!b)return;
+  const power=Math.max(.1,Math.min(1,Number(b.intensity||.5))),down=!!b.downbeat;
+  companionScene.classList.remove('beat-cinematic','downbeat-cinematic');void companionScene.offsetWidth;
+  companionScene.classList.add(down?'downbeat-cinematic':'beat-cinematic');
+  setTimeout(()=>companionScene.classList.remove('beat-cinematic','downbeat-cinematic'),860);
+  cinemaParticleBurst(power,down);
+  if(document.body.classList.contains('tv-ultralite')){
+    companionNow.style.opacity=down?'1':'.88';
+    companionNow.style.transform=down?'scale(1.04)':'scale(1.015)';
+    setTimeout(()=>{companionNow.style.transform='none';companionNow.style.opacity='1'},down?180:110);
+    return;
+  }
+  companionNow.animate(
+    down?[{transform:'scale(.72) rotateX(26deg)',filter:'blur(12px)',opacity:.2},{transform:'scale(1.12)',filter:'blur(0)',opacity:1,offset:.48},{transform:'scale(1)',filter:'none',opacity:1}]
+        :[{transform:'scale(.94)',filter:'brightness(1.6)'},{transform:'scale(1.035)',filter:'brightness(1.05)'},{transform:'scale(1)',filter:'none'}],
+    {duration:down?520:230,easing:'cubic-bezier(.08,.86,.18,1)'}
+  );
+}
+function updateCompanionTypography(){
+  const w=(hero?.textContent||'').trim();
+  if(w&&w!=='♫')companionNow.textContent=w;
+  const bpm=Number(beatState.bpm||0),beat=Number(beatState.bar_beat||0);
+  companionSub.textContent=bpm?`${Math.round(bpm)} BPM · ${beat||'–'}/4`:'ACQUIRING LIVE BEAT';
+}
+function setCompanionMode(mode){
+  companionMode=mode==='karaoke'?'karaoke':'rave';if(!IS_HOST)document.body.animate([{opacity:.72,filter:'blur(4px)'},{opacity:1,filter:'none'}],{duration:260,easing:'ease-out'});
+  document.body.classList.toggle('mode-rave',companionMode==='rave');
+  document.body.classList.toggle('mode-karaoke',companionMode==='karaoke');
+  modeRave.classList.toggle('active',companionMode==='rave');
+  modeKaraoke.classList.toggle('active',companionMode==='karaoke');
+}
+if(!IS_HOST){
+  document.body.classList.add('companion');
+  applyDeviceClass();
+  if(isSamsungTV())configureSamsungTV();
+  setCompanionMode('rave');
+}else{
+  document.body.classList.add('host');
+}
+modeRave.addEventListener('click',()=>setCompanionMode('rave'));
+modeKaraoke.addEventListener('click',()=>setCompanionMode('karaoke'));
+
+function beatPalette(barBeat){
+  // Keep semantic palette as the primary one; shift secondary energy slightly
+  // across the bar so repeated beats don't look mechanically identical.
+  const shifts=['0deg','18deg','-12deg','28deg'];
+  beatLayer.style.filter=`hue-rotate(${shifts[(Math.max(1,barBeat)-1)%4]})`;
+}
+
+function onBeatState(b){
+  beatState={...beatState,...(b||{})};
+  const bpm=Number(beatState.bpm||0);
+  const conf=Math.round(Number(beatState.confidence||0)*100);
+  beatReadout.textContent=bpm
+    ? `BEAT ORACLE · ${bpm.toFixed(1)} BPM · ${beatState.meter||'4/4'} · ${conf}%`
+    : `BEAT ORACLE · ${beatState.status||'acquiring'}`;
+  companionBeatText.textContent=bpm?`${bpm.toFixed(0)} BPM · ${beatState.meter||'4/4'} · ${conf}% LOCK`:'BEAT ORACLE ACQUIRING';if(!IS_HOST)updateCompanionTypography();
+}
+
+function onBeat(b){
+  if(!b)return;
+  if(!IS_HOST)cinematicBeatHit(b);
+  beatState={...beatState,...b};
+  const power=Math.max(.12,Math.min(1,Number(b.intensity||.5)));
+  const down=!!b.downbeat;
+
+  beatPalette(Number(b.bar_beat||1));
+
+  stage.classList.remove('beat-hit','downbeat-hit');
+  // Reflow makes repeated keyframe classes retrigger deterministically.
+  void stage.offsetWidth;
+  stage.classList.add(down?'downbeat-hit':'beat-hit');
+  setTimeout(()=>stage.classList.remove('beat-hit','downbeat-hit'),460);
+
+  const ring=document.createElement('i');
+  ring.className='beat-ring';
+  ring.style.opacity=String(.35+power*.55);
+  ring.style.borderWidth=`${down?3:1.5}px`;
+  beatLayer.appendChild(ring);
+  setTimeout(()=>ring.remove(),760);
+
+  // Host and karaoke companions get restrained background effects.
+  // RAVE companions get the full concert hit.
+  if(down){
+    beams(IS_HOST?2:3);
+    ripple(IS_HOST?2:4);
+    burstParticles(
+      IS_HOST?Math.round(8+power*14):Math.round(18+power*28),
+      IS_HOST?30:58
+    );
+  }else if(power>.43){
+    if(!IS_HOST && companionMode==='rave'){
+      burstParticles(Math.round(8+power*13),38);
+    }else if(power>.68){
+      burstParticles(5,22);
+    }
+  }
+
+  companionOrb.classList.remove('hit','downbeat');
+  void companionOrb.offsetWidth;
+  companionOrb.classList.add(down?'downbeat':'hit');
+  setTimeout(()=>companionOrb.classList.remove('hit','downbeat'),500);
+
+  companionBeatText.textContent=
+    `${Number(b.bpm||0).toFixed(0)} BPM · ${b.bar_beat||1}/4${down?' · DOWNBEAT':''}`;
+}
+
+function pos(){
+  let p=Number(media.position_ms||0);
+  if(media.playing)p+=performance.now()-Number(media.local_anchor_ms||performance.now());
+  return Math.max(0,p);
+}
+function lineByTimestamp(p){
+  let lo=0,hi=lines.length-1,b=-1;
+  while(lo<=hi){let m=(lo+hi)>>1;if(lines[m].t<=p){b=m;lo=m+1}else hi=m-1}
+  return b;
+}
+function preciseAt(p){
+  const wm=timingState.wordmap||{};
+  const arr=Object.values(wm)
+    .map(e=>({
+      e,
+      s:Number(e.start_ms||0)+Number(timingState.provider_offset_ms||0),
+      en:Math.max(
+        Number(e.start_ms||0)+Number(timingState.provider_offset_ms||0)+40,
+        Number(e.end_ms||0)+Number(timingState.provider_offset_ms||0)
+      )
+    }))
+    .filter(x=>Number.isFinite(x.s))
+    .sort((a,b)=>a.s-b.s || Number(a.e.line)-Number(b.e.line) || Number(a.e.word)-Number(b.e.word));
+
+  if(!arr.length)return null;
+
+  let lo=0,hi=arr.length-1,b=-1;
+  while(lo<=hi){
+    const m=(lo+hi)>>1;
+    if(arr[m].s<=p){b=m;lo=m+1}else hi=m-1;
+  }
+
+  if(b<0){
+    // Authoritative provider: before the first timed word, do not invent one.
+    if(timingState.authoritative)return {waiting:true,precise:true};
+    return null;
+  }
+
+  const cur=arr[b];
+  if(p<=cur.en){
+    return{
+      li:Number(cur.e.line),
+      wi:Number(cur.e.word),
+      prog:Math.max(0,Math.min(1,(p-cur.s)/(cur.en-cur.s))),
+      precise:true
+    };
+  }
+
+  const nxt=arr[b+1];
+
+  if(timingState.authoritative){
+    // MUSIXMATCH RICHSYNC IS LAW.
+    // Between provider words, hold the preceding word only until the next
+    // provider timestamp. Do not fall back to LRCLIB/Whisper interpolation.
+    if(nxt && p<nxt.s){
+      return{
+        li:Number(cur.e.line),
+        wi:Number(cur.e.word),
+        prog:1,
+        precise:true,
+        holding:true
+      };
+    }
+    // After the last provider word, remain on it instead of inventing timings.
+    if(!nxt){
+      return{
+        li:Number(cur.e.line),
+        wi:Number(cur.e.word),
+        prog:1,
+        precise:true,
+        holding:true
+      };
+    }
+  }
+
+  // Non-authoritative local wordmaps only hold short natural gaps.
+  if(nxt && Number(nxt.e.line)===Number(cur.e.line) && p<nxt.s && (nxt.s-cur.en)<420){
+    return{li:Number(cur.e.line),wi:Number(cur.e.word),prog:1,precise:true};
+  }
+  return null;
+}
+function fallbackAt(p){
+  let li=lineByTimestamp(p);if(li<0||!lines[li])return null;
+  const line=lines[li],words=line.text.match(/\S+/g)||[];if(!words.length)return null;
+  let start=Number(line.t),end=Number(lines[li+1]?.t||start+4200);
+  // adaptive correction learned by Whisper
+  const speed=Number(timingState.speed||1),offset=Number(timingState.offset_ms||0);
+  start=offset+speed*start;end=offset+speed*end;
+  const span=Math.max(500,end-start),local=Math.max(0,Math.min(span,p-start));
+  const weights=words.map(w=>Math.max(.8,Math.min(3,w.length*.22+.6))),total=weights.reduce((a,b)=>a+b,0);
+  let a=0;
+  for(let wi=0;wi<words.length;wi++){
+    let d=span*weights[wi]/total;
+    if(local<=a+d||wi===words.length-1)return{li,wi,prog:Math.max(0,Math.min(1,(local-a)/d)),precise:false};
+    a+=d;
+  }
+}
+function currentTiming(p){
+  const exact=preciseAt(p);
+  if(timingState.authoritative){
+    return exact; // NEVER mix Musixmatch RichSync with model correction.
+  }
+  return exact||fallbackAt(p);
+}
+
+
+const CATEGORY_DEFS=window.LF_SEMANTIC_CATEGORIES||[];
+
+const SEMANTIC_WORD_INDEX=new Map();
+const SEMANTIC_ROOT_RULES=[];
+for(const def of CATEGORY_DEFS){
+  for(const w of def.words||[]) SEMANTIC_WORD_INDEX.set(cleanSemanticWord(w),def);
+  for(const r of def.roots||[]) SEMANTIC_ROOT_RULES.push([cleanSemanticWord(r),def]);
+}
+
+function cleanSemanticWord(w){
+  return String(w||'')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/['’]/g,'')
+    .replace(/^[^a-z0-9]+|[^a-z0-9]+$/g,'');
+}
+function cleanSemanticLine(s){
+  return (' '+String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]+/g,' ')+' ').replace(/\s+/g,' ');
+}
+function semanticBase(w){
+  let x=cleanSemanticWord(w);
+  if(x.length>5 && x.endsWith('ing')) x=x.slice(0,-3);
+  if(x.length>4 && x.endsWith('ies')) x=x.slice(0,-3)+'y';
+  else if(x.length>4 && x.endsWith('ied')) x=x.slice(0,-3)+'y';
+  else if(x.length>4 && x.endsWith('ed')) x=x.slice(0,-2);
+  else if(x.length>4 && x.endsWith('es')) x=x.slice(0,-2);
+  else if(x.length>3 && x.endsWith('s')) x=x.slice(0,-1);
+  if(x.endsWith('in') && x.length>4) x=x+'g'; // trappin -> trapping-ish root
+  return x;
+}
+function semanticFor(word,line){
+  const raw=cleanSemanticWord(word);
+  const base=semanticBase(raw);
+  const ctx=cleanSemanticLine(line);
+
+  // Exact direct hit first.
+  const direct=SEMANTIC_WORD_INDEX.get(raw) || SEMANTIC_WORD_INDEX.get(base);
+  if(direct) return direct;
+
+  // Phrase / line context next.
+  for(const def of CATEGORY_DEFS){
+    for(const p of def.phrases||[]){
+      const pp=' '+String(p||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]+/g,' ').replace(/\s+/g,' ').trim()+' ';
+      if(pp.trim() && ctx.includes(pp)) return def;
+    }
+  }
+
+  // Root/stem hints for broader coverage.
+  for(const [root,def] of SEMANTIC_ROOT_RULES){
+    if(!root) continue;
+    if(base===root || base.startsWith(root) || (root.length>=4 && base.includes(root))) return def;
+  }
+
+  // Soft lexical heuristics for slang / profanity / compact lyric tokens.
+  if(/^(mf|mfs|af|wtf|omg|idgaf|idc|frfr|nfs|ngl|irl|tbh)$/.test(base)) return CATEGORY_DEFS.find(d=>d.key==='rage') || {fx:'glitch',a:'#ff4050',b:'#ffd44f'};
+  if(/^(shawty|shorty|lil|luh|bae|boo)$/.test(base)) return CATEGORY_DEFS.find(d=>d.key==='love');
+  if(/^(gang|ganggang|slatt|slime|twin|homie|brodie|cuh|opp|opps|drillin|trappin)$/.test(base)) return CATEGORY_DEFS.find(d=>d.key==='street');
+  if(/^(perk|perky|xanny|wock|wocky|za|zaza|thc)$/.test(base)) return CATEGORY_DEFS.find(d=>d.key==='smoke');
+  if(/^(glocky|drakey|drac|ak47|uzii|switch|switchy)$/.test(base)) return CATEGORY_DEFS.find(d=>d.key==='weapon');
+
+  // Deterministic context fallback for truly unknown tokens.
+  // This keeps even rare names/words visually alive without any LLM.
+  if(/\d/.test(raw)) return {key:'number',fx:'tech',a:'#89f2ff',b:'#9b6cff'};
+  if(raw.length>=10) return {key:'longword',fx:'cosmic',a:'#c181ff',b:'#5967ff'};
+  if(raw.length<=2) return {key:'shortword',fx:'impact',a:'#ffffff',b:'#d7ff57'};
+  if(ctx.includes(' love ')||ctx.includes(' heart ')) return {key:'ctxlove',fx:'love',a:'#ff5da2',b:'#ff9dc9'};
+  if(ctx.includes(' money ')||ctx.includes(' cash ')||ctx.includes(' racks ')) return {key:'ctxmoney',fx:'money',a:'#9cff62',b:'#dfff73'};
+  if(ctx.includes(' night ')||ctx.includes(' dark ')) return {key:'ctxdark',fx:'dark',a:'#765eff',b:'#120822'};
+  if(ctx.includes(' party ')||ctx.includes(' club ')||ctx.includes(' beat ')) return {key:'ctxrave',fx:'rave',a:'#ff27ad',b:'#00f2ff'};
+  return {key:'default',fx:'default',a:'#d7ff57',b:'#7f5cff'};
+}
+function setFxPalette(fx){
+  document.documentElement.style.setProperty('--fxA',fx.a);
+  document.documentElement.style.setProperty('--fxB',fx.b);
+  document.documentElement.style.setProperty('--fxGlow',fx.a+'88');
+}
+function burstParticles(count=12,spread=34){
+  for(let i=0;i<count;i++){
+    const p=document.createElement('i');p.className='fx-particle';
+    p.style.setProperty('--pc',i%2?'var(--fxA)':'var(--fxB)');
+    p.style.setProperty('--dx',`${(Math.random()-.5)*spread}vw`);
+    p.style.setProperty('--dy',`${(Math.random()-.5)*spread*.75}vh`);
+    p.style.setProperty('--dur',`${520+Math.random()*620}ms`);
+    particleLayer.appendChild(p);setTimeout(()=>p.remove(),1250);
+  }
+}
+function symbols(symbol,count=12){
+  for(let i=0;i<count;i++){
+    const e=document.createElement('i');e.className='fx-symbol';e.textContent=symbol;
+    e.style.setProperty('--x',`${5+Math.random()*90}%`);
+    e.style.setProperty('--dur',`${700+Math.random()*1000}ms`);
+    e.style.setProperty('--rot',`${(Math.random()-.5)*120}deg`);
+    e.style.setProperty('--drift',`${(Math.random()-.5)*15}vw`);
+    semanticLayer.appendChild(e);setTimeout(()=>e.remove(),1800);
+  }
+}
+function ripple(count=1){
+  for(let i=0;i<count;i++){
+    const r=document.createElement('i');r.className='fx-ripple';
+    r.style.animationDelay=`${i*90}ms`;semanticLayer.appendChild(r);setTimeout(()=>r.remove(),950);
+  }
+}
+function stars(count=28){
+  for(let i=0;i<count;i++){
+    const s=document.createElement('i');s.className='fx-star';
+    s.style.left=`${Math.random()*100}%`;s.style.top=`${Math.random()*100}%`;
+    s.style.animationDelay=`${Math.random()*250}ms`;semanticLayer.appendChild(s);setTimeout(()=>s.remove(),1450);
+  }
+}
+function echo(word,count=2){
+  for(let i=0;i<count;i++){
+    const e=document.createElement('div');e.className='fx-echo';e.textContent=word;
+    e.style.animationDelay=`${i*80}ms`;echoLayer.appendChild(e);setTimeout(()=>e.remove(),900);
+  }
+}
+function beams(power=1){
+  const dur=360+power*130;
+  [beam1,beam2,beam3].forEach((b,i)=>b.animate(
+    [{opacity:0,transform:`rotate(${i===0?26:i===1?-26:0}deg) scaleX(.65)`},
+     {opacity:.20+.09*power,offset:.45},
+     {opacity:0,transform:`rotate(${i===0?-8:i===1?8:0}deg) scaleX(1.2)`}],
+    {duration:dur+i*90,easing:'ease-out'}
+  ));
+}
+
+function applySemanticVisual(word,line){
+  const fx=semanticFor(word,line);
+  setFxPalette(fx);
+  hero.className=`fx-${fx.fx}`;
+
+  switch(fx.fx){
+    case'fire': burstParticles(22,42);symbols('✦',9);beams(1);break;
+    case'ice': burstParticles(17,30);ripple(2);break;
+    case'water': ripple(3);burstParticles(10,25);break;
+    case'love': symbols('♥',12);ripple(2);break;
+    case'money': symbols('$',15);burstParticles(8,28);break;
+    case'luxury': symbols('◆',10);burstParticles(18,32);beams(1);break;
+    case'speed': burstParticles(12,58);beams(1);break;
+    case'up': burstParticles(16,28);break;
+    case'down': burstParticles(16,28);break;
+    case'weapon': ripple(2);burstParticles(24,46);echo(word,1);break;
+    case'impact': ripple(3);burstParticles(28,48);echo(word,2);beams(2);break;
+    case'street': beams(1);burstParticles(14,30);break;
+    case'smoke': burstParticles(20,20);echo(word,1);break;
+    case'toxic': burstParticles(20,34);ripple(2);break;
+    case'tech': echo(word,3);beams(1);break;
+    case'cosmic': stars(38);ripple(1);break;
+    case'rave': beams(2);burstParticles(24,48);ripple(2);break;
+    case'dark': stars(12);echo(word,1);break;
+    case'light': stars(30);beams(2);ripple(1);break;
+    case'angel': stars(24);ripple(1);break;
+    case'devil': burstParticles(18,30);echo(word,1);break;
+    case'pain': echo(word,2);break;
+    case'rage': burstParticles(26,36);echo(word,2);beams(1);break;
+    case'body': ripple(2);burstParticles(12,20);break;
+    case'royal': symbols('♛',8);burstParticles(15,32);break;
+    case'alone': echo(word,1);break;
+    case'stop': ripple(1);break;
+    case'repeat': echo(word,3);break;
+    default: burstParticles(5,16);
+  }
+}
+function futureTransform(word,i){
+  const presets=[
+    [-42,-24,-350,14,25,-6],[40,-20,-380,9,-28,7],[-48,12,-420,-7,32,5],
+    [44,15,-400,-9,-30,-5],[-18,30,-460,-18,12,4],[22,32,-440,-16,-14,-4]
+  ];
+  const p=presets[i%presets.length];
+  return `translate3d(calc(-50% + ${p[0]}vw),calc(-50% + ${p[1]}vh),${p[2]}px) rotateX(${p[3]}deg) rotateY(${p[4]}deg) rotateZ(${p[5]}deg) scale(${.78-i*.075})`;
+}
+async function loadJoinInfo(){
+  try{
+    const r=await fetch('/api/join',{cache:'no-store'}),d=await r.json();
+    joinUrl.textContent=`${d.mdns_url} · fallback ${d.lan_url}`;
+    joinUrl.title=d.lan_url;
+  }catch(e){}
+}
+if(IS_HOST)loadJoinInfo();
+
+function rebuild(t){
+  if(!t||!lines[t.li])return;
+  const words=lines[t.li].text.match(/\S+/g)||[],w=words[t.wi]||'…';
+  lastLine=t.li;lastWord=t.wi;
+  prev.textContent=lines[t.li-1]?.text||'';next.textContent=lines[t.li+1]?.text||'';
+  hero.innerHTML=`<span>${w}</span><span class="fill">${w}</span>`;heroFill=hero.querySelector('.fill');
+  applySemanticVisual(w,lines[t.li].text);if(!IS_HOST){companionNow.textContent=w;updateCompanionTypography();}
+  future.innerHTML=words.slice(t.wi+1,t.wi+7).map((x,i)=>`<span class="f" style="transform:${futureTransform(x,i)}">${x}</span>`).join('');
+  hero.animate([{opacity:.22,filter:'blur(5px)'},{opacity:1,filter:'none'}],{duration:160,easing:'ease-out'});
+}
+function reset(){lastLine=-1;lastWord=-1;heroFill=null;hero.className='';hero.textContent='…';future.innerHTML='';prev.textContent='';next.textContent='';particleLayer.innerHTML='';echoLayer.innerHTML='';semanticLayer.innerHTML=''}
+function onMedia(m){
+  const previousTrackEpoch=media.track_epoch;
+  const previousSeekEpoch=media.seek_epoch;
+  const tc=m.track_epoch!==previousTrackEpoch;
+  const sk=m.seek_epoch!==previousSeekEpoch;
+
+  const before=pos();
+  let incoming=Number(m.position_ms||0);
+
+  // Same track + no real seek => network/event arrival may NEVER rewind the
+  // browser's local playback clock.
+  if(!tc && !sk && m.playing){
+    incoming=Math.max(incoming,before);
+  }
+
+  media={...m,position_ms:incoming,local_anchor_ms:performance.now()};
+
+  title.textContent=m.title||'Waiting for Spotify…';
+  artist.textContent=m.artist||'';
+  transport.textContent=`${m.clock_mode||m.event||'tick'} · ${m.playing?'PLAY':'PAUSE'} · rawΔ${m.raw_delta_ms||0}`;
+  epoch.textContent=`T${m.track_epoch} S${m.seek_epoch} P${m.playback_epoch}`;
+
+  if(tc){reset();lines=[]}
+  if(sk){lastLine=-1;lastWord=-1}
+}
+function updateResyncButtons(){
+  const auth=!!timingState.authoritative;
+  mxmResyncButton.classList.toggle('disabled',!auth);
+  mxmResyncButton.disabled=!auth;
+  resyncButton.classList.toggle('disabled',auth);
+  resyncButton.disabled=auth;
+}
+function onLyrics(d){
+  lines=d.lyrics?.lines||[];
+  timingState=d.timing||{};
+  updateResyncButtons();
+  lyricsBadge.textContent=d.lyrics?.ok
+    ? (timingState.authoritative
+        ? `${(d.lyrics.provider||'LYRICS').toUpperCase()} AUTHORITATIVE`
+        : `${(d.lyrics.provider||'LYRICS').toUpperCase()} ${(timingState.quality||d.lyrics.quality||'').toUpperCase()}`)
+    : 'NO LYRICS';
+  reset()
+}
+
+let resyncBusy=false;
+function resyncVisualState(kind,label){
+  resyncButton.classList.remove('scanning','locked','failed');
+  resyncFlash.classList.remove('scanning','locked');
+  if(kind)resyncButton.classList.add(kind);
+  if(kind==='scanning'||kind==='locked')resyncFlash.classList.add(kind);
+  resyncButton.textContent=label;
+}
+
+let mxmResyncBusy=false;
+function mxmVisualState(kind,label){
+  mxmResyncButton.classList.remove('scanning','locked','failed');
+  if(kind)mxmResyncButton.classList.add(kind);
+  mxmResyncButton.textContent=label;
+}
+async function forceMusixmatchResync(){
+  if(mxmResyncBusy || !timingState.authoritative)return;
+  mxmResyncBusy=true;
+  mxmVisualState('scanning','🎯 CALIBRATING…');
+  burstParticles(24,42);beams(2);ripple(2);
+
+  try{
+    const r=await fetch('/api/musixmatch-resync',{method:'POST',cache:'no-store'});
+    const d=await r.json();
+
+    if(d.ok){
+      mxmVisualState(
+        'locked',
+        `✓ MXM ${Number(d.provider_offset_ms||0)>=0?'+':''}${Math.round(Number(d.provider_offset_ms||0))}ms`
+      );
+      burstParticles(34,54);beams(3);ripple(4);
+      setTimeout(()=>mxmVisualState('','🎯 SYNC MUSIXMATCH'),1900);
+    }else{
+      mxmVisualState('failed','✕ MXM SYNC FAILED');
+      setTimeout(()=>mxmVisualState('','🎯 SYNC MUSIXMATCH'),1700);
+    }
+  }catch(e){
+    mxmVisualState('failed','✕ MXM SYNC FAILED');
+    setTimeout(()=>mxmVisualState('','🎯 SYNC MUSIXMATCH'),1700);
+  }finally{
+    setTimeout(()=>{mxmResyncBusy=false},450);
+  }
+}
+mxmResyncButton.addEventListener('click',forceMusixmatchResync);
+
+async function forceResync(){
+  if(resyncBusy)return;
+  resyncBusy=true;
+  resyncVisualState('scanning','⚡ SCANNING VOCALS…');
+  burstParticles(26,52);beams(2);ripple(3);
+  try{
+    const r=await fetch('/api/resync',{method:'POST',cache:'no-store'});
+    const d=await r.json();
+    if(d.ok){
+      if(d.authoritative){
+        resyncVisualState('locked','✓ PROVIDER LOCKED');
+      }else{
+        resyncVisualState('locked',`✓ LOCKED · ${d.matches||0} MATCHES`);
+        burstParticles(42,64);beams(3);ripple(4);
+      }
+      setTimeout(()=>resyncVisualState('', '⚡ FORCE RESYNC'),1700);
+    }else{
+      resyncVisualState('failed','✕ RESYNC FAILED');
+      setTimeout(()=>resyncVisualState('', '⚡ FORCE RESYNC'),1700);
+    }
+  }catch(e){
+    resyncVisualState('failed','✕ RESYNC FAILED');
+    setTimeout(()=>resyncVisualState('', '⚡ FORCE RESYNC'),1700);
+  }finally{
+    setTimeout(()=>{resyncBusy=false},450);
+  }
+}
+resyncButton.addEventListener('click',forceResync);
+
+function connect(){
+  const ws=new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen=()=>status.textContent='oracle websocket live';
+  ws.onclose=()=>{status.textContent='reconnecting…';setTimeout(connect,400)};
+  ws.onerror=()=>ws.close();
+  ws.onmessage=e=>{
+    const d=JSON.parse(e.data);
+    if(d.type==='snapshot'){onMedia(d.media||{});onLyrics({lyrics:d.lyrics||{},timing:d.timing||{}});onBeatState(d.beat||{})}
+    else if(d.type==='media')onMedia(d.media||{});
+    else if(d.type==='beat')onBeat(d.beat||{});
+    else if(d.type==='beat_state')onBeatState(d.beat||{});
+    else if(d.type==='lyrics_reset'){reset();lines=[];lyricsBadge.textContent='LOADING'}
+    else if(d.type==='lyrics')onLyrics(d);
+    else if(d.type==='timing'||d.type==='timing_reset'){timingState=d.timing||{};updateResyncButtons();if(d.type==='timing_reset'){lastLine=-1;lastWord=-1}}
+    else if(d.type==='mxm_resync'){
+      if(d.phase==='scanning' && !mxmResyncBusy)mxmVisualState('scanning','🎯 REMOTE MXM SYNC…');
+      else if(d.phase==='locked' && !mxmResyncBusy){
+        const off=Number(d.result?.provider_offset_ms||0);
+        mxmVisualState('locked',`✓ MXM ${off>=0?'+':''}${Math.round(off)}ms`);
+        setTimeout(()=>mxmVisualState('','🎯 SYNC MUSIXMATCH'),1500);
+      }else if(d.phase==='failed' && !mxmResyncBusy){
+        mxmVisualState('failed','✕ MXM SYNC FAILED');
+        setTimeout(()=>mxmVisualState('','🎯 SYNC MUSIXMATCH'),1500);
+      }
+    }
+    else if(d.type==='resync'){
+      if(d.phase==='scanning' && !resyncBusy)resyncVisualState('scanning','⚡ REMOTE RESYNC…');
+      else if(d.phase==='locked' && !resyncBusy){resyncVisualState('locked','✓ TIMING LOCKED');setTimeout(()=>resyncVisualState('','⚡ FORCE RESYNC'),1400)}
+      else if(d.phase==='failed' && !resyncBusy){resyncVisualState('failed','✕ RESYNC FAILED');setTimeout(()=>resyncVisualState('','⚡ FORCE RESYNC'),1400)}
+    }
+  }
+}
+function frame(){
+  if(lines.length){
+    const p=pos(),t=currentTiming(p);
+    if(t && !t.waiting){
+      if(t.li!==lastLine||t.wi!==lastWord)rebuild(t);
+      if(heroFill)heroFill.style.clipPath=`inset(0 ${(1-t.prog)*100}% 0 0)`;
+      const q=Math.floor(p);
+      status.textContent=`${Math.floor(q/60000)}:${String(Math.floor(q/1000)%60).padStart(2,'0')}.${String(q%1000).padStart(3,'0')} · ${timingState.authoritative?'PROVIDER CLOCK · MXMΔ'+(timingState.provider_offset_ms||0)+'ms':(timingState.status||'timing')} · ${media.clock_mode||'oracle'}${timingState.authoritative?'':' · Δ'+(timingState.offset_ms||0)+'ms'}`;
+    }
+  }
+  requestAnimationFrame(frame);
+}
+connect();requestAnimationFrame(frame)
+})();
+</script>
+</body></html>
