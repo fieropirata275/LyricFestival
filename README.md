@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="LyricFestival" width="100%">
+  <img src="banner.svg" alt="LyricFestival" width="100%">
 </p>
 
 <p align="center">
@@ -37,31 +37,31 @@
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="assets/icons/lexicon.svg" width="26" align="left">&nbsp;<b>Deterministic semantic lexicon</b><br>
+      <img src="lexicon.svg" width="26" align="left">&nbsp;<b>Deterministic semantic lexicon</b><br>
       13,394 words across 79 categories drive the visuals. No AI model, zero model latency, and fully editable.
     </td>
     <td width="50%" valign="top">
-      <img src="assets/icons/target.svg" width="26" align="left">&nbsp;<b>Word-level timing</b><br>
+      <img src="target.svg" width="26" align="left">&nbsp;<b>Word-level timing</b><br>
       Musixmatch RichSync as the authority, LRCLIB and local alignment as fallbacks, with Whisper-powered manual resync.
     </td>
   </tr>
   <tr>
     <td valign="top">
-      <img src="assets/icons/pulse.svg" width="26" align="left">&nbsp;<b>Beat Oracle</b><br>
+      <img src="pulse.svg" width="26" align="left">&nbsp;<b>Beat Oracle</b><br>
       Server-side BPM, phase and 4/4 bar tracking, broadcast as one shared beat clock to every client.
     </td>
     <td valign="top">
-      <img src="assets/icons/users.svg" width="26" align="left">&nbsp;<b>Rave Companions</b><br>
+      <img src="users.svg" width="26" align="left">&nbsp;<b>Rave Companions</b><br>
       Any LAN device joins via QR or <code>lyricfestival.local</code> and gets RAVE or KARAOKE mode.
     </td>
   </tr>
   <tr>
     <td valign="top">
-      <img src="assets/icons/headphones.svg" width="26" align="left">&nbsp;<b>Private headphone audio</b><br>
+      <img src="headphones.svg" width="26" align="left">&nbsp;<b>Private headphone audio</b><br>
       48 kHz stereo over WebRTC/Opus straight to a phone's headphones, with no STUN/TURN needed on the LAN.
     </td>
     <td valign="top">
-      <img src="assets/icons/tv.svg" width="26" align="left">&nbsp;<b>Adaptive TV rendering</b><br>
+      <img src="tv.svg" width="26" align="left">&nbsp;<b>Adaptive TV rendering</b><br>
       Samsung Tizen TVs are benchmarked and auto-assigned STANDARD, LITE or ULTRA-LITE.
     </td>
   </tr>
@@ -72,7 +72,7 @@
 ## Architecture
 
 <p align="center">
-  <img src="assets/architecture.svg" alt="LyricFestival architecture" width="100%">
+  <img src="architecture.svg" alt="LyricFestival architecture" width="100%">
 </p>
 
 The core principle: **every layer is isolated.** Visual semantics, beat detection and private audio never touch lyric timing, and a failure in one of them cannot disturb the others.
@@ -106,7 +106,7 @@ The core principle: **every layer is isolated.** Visual semantics, beat detectio
 
 ## Minimum hardware requirements
 
-<img src="assets/icons/cpu.svg" width="24" align="left">&nbsp;LyricFestival is **not a lightweight app.** The host PC runs real-time audio capture, deep Whisper passes, beat analysis, a WebSocket hub, one WebRTC stream per companion and the full visual stage, all at the same time. A reasonably powerful machine is required for a smooth experience.
+<img src="cpu.svg" width="24" align="left">&nbsp;LyricFestival is **not a lightweight app.** The host PC runs real-time audio capture, deep Whisper passes, beat analysis, a WebSocket hub, one WebRTC stream per companion and the full visual stage, all at the same time. A reasonably powerful machine is required for a smooth experience.
 
 | Component | Minimum | Recommended |
 |---|---|---|
@@ -128,7 +128,7 @@ The core principle: **every layer is isolated.** Visual semantics, beat detectio
 
 ## Semantic dictionary (customizable)
 
-<img src="assets/icons/lexicon.svg" width="24" align="left">&nbsp;The visualizer reacts to lyrics through a **static, deterministic dictionary**: every word it recognizes is mapped to a semantic category, and each category drives a specific palette, effect and animation style. The same word always produces the same visual reaction.
+<img src="lexicon.svg" width="24" align="left">&nbsp;The visualizer reacts to lyrics through a **static, deterministic dictionary**: every word it recognizes is mapped to a semantic category, and each category drives a specific palette, effect and animation style. The same word always produces the same visual reaction.
 
 **File:** `app/static/semantic_lexicon.js`
 
@@ -139,16 +139,16 @@ The core principle: **every layer is isolated.** Visual semantics, beat detectio
 | Phrase patterns | 375 |
 | Root / stem rules | 1,257 |
 
-### <img src="assets/icons/edit.svg" width="22" align="center"> Make it yours
+### <img src="edit.svg" width="22" align="center"> Make it yours
 
 The dictionary is plain JavaScript and **meant to be edited.** Whoever downloads the project can tune it to their own music, language or event:
 
 | | Action | Example use |
 |:-:|---|---|
-| <img src="assets/icons/plus.svg" width="20"> | **Add words** to an existing category | Local slang, artist names, words in your language |
-| <img src="assets/icons/minus.svg" width="20"> | **Remove words** from a category | Stop the visuals reacting to words you don't want highlighted |
-| <img src="assets/icons/edit.svg" width="20"> | **Move words** between categories | Change which visual style a word triggers |
-| <img src="assets/icons/trash.svg" width="20"> | **Remove whole categories** | e.g. drop profanity, drugs or weapons for a family-friendly event |
+| <img src="plus.svg" width="20"> | **Add words** to an existing category | Local slang, artist names, words in your language |
+| <img src="minus.svg" width="20"> | **Remove words** from a category | Stop the visuals reacting to words you don't want highlighted |
+| <img src="edit.svg" width="20"> | **Move words** between categories | Change which visual style a word triggers |
+| <img src="trash.svg" width="20"> | **Remove whole categories** | e.g. drop profanity, drugs or weapons for a family-friendly event |
 
 Open `app/static/semantic_lexicon.js`, find the category you want to change and add or delete entries in its word list. Keep the existing format of the file, save it and reload the page. Nothing needs recompiling, and **timing is never affected**, since the lexicon only controls how words look, not when they appear.
 
@@ -216,10 +216,10 @@ Two manual sync buttons live in the lower-right corner of the host screen. **Onl
 
 | Provider active | FORCE RESYNC | SYNC MUSIXMATCH |
 |---|:-:|:-:|
-| Musixmatch RichSync (word-level) | <img src="assets/icons/x-red.svg" width="18"> | <img src="assets/icons/check-green.svg" width="18"> |
-| LRCLIB / local alignment | <img src="assets/icons/check-green.svg" width="18"> | <img src="assets/icons/x-red.svg" width="18"> |
+| Musixmatch RichSync (word-level) | <img src="x-red.svg" width="18"> | <img src="check-green.svg" width="18"> |
+| LRCLIB / local alignment | <img src="check-green.svg" width="18"> | <img src="x-red.svg" width="18"> |
 
-### <img src="assets/icons/bolt.svg" width="22" align="center"> FORCE RESYNC &nbsp;<sub>v13</sub>
+### <img src="bolt.svg" width="22" align="center"> FORCE RESYNC &nbsp;<sub>v13</sub>
 
 For LRCLIB / locally aligned lyrics that have drifted.
 
@@ -235,7 +235,7 @@ For LRCLIB / locally aligned lyrics that have drifted.
 
 The button shows *scanning*, *locked* and *failed* states. Provider-authoritative timing is never overwritten.
 
-### <img src="assets/icons/target.svg" width="22" align="center"> SYNC MUSIXMATCH &nbsp;<sub>v14</sub>
+### <img src="target.svg" width="22" align="center"> SYNC MUSIXMATCH &nbsp;<sub>v14</sub>
 
 Calibrates Musixmatch RichSync **without rewriting its timestamps**.
 
@@ -248,7 +248,7 @@ Calibrates Musixmatch RichSync **without rewriting its timestamps**.
 
 Musixmatch's internal word spacing is preserved; the whole timeline simply shifts left or right.
 
-<img src="assets/icons/shield.svg" width="20" align="left">&nbsp;**Safety rules**
+<img src="shield.svg" width="20" align="left">&nbsp;**Safety rules**
 - Correction clamped to **±4000 ms**
 - Repeated-phrase outliers rejected
 - At least **two strong matches** required
@@ -258,7 +258,7 @@ Musixmatch's internal word spacing is preserved; the whole timeline simply shift
 
 ## Beat Oracle
 
-<img src="assets/icons/pulse.svg" width="24" align="left">&nbsp;`app/beat_oracle.py` reuses the host's existing WASAPI loopback capture. Guests **never** request microphone or audio permissions.
+<img src="pulse.svg" width="24" align="left">&nbsp;`app/beat_oracle.py` reuses the host's existing WASAPI loopback capture. Guests **never** request microphone or audio permissions.
 
 **Pipeline:** ~8 s audio window → onset-energy envelope → BPM via autocorrelation → beat phase from recent transients → continuous tempo/phase smoothing → beats scheduled against the Media Oracle timeline → grouped into an estimated 4/4 bar → broadcast over WebSocket.
 
@@ -282,7 +282,7 @@ The host analyzes audio **once**, and every companion follows the same server-si
 
 ## Host vs Rave Companions
 
-<img src="assets/icons/network.svg" width="24" align="left">&nbsp;The role is decided by **how the page is opened.**
+<img src="network.svg" width="24" align="left">&nbsp;The role is decided by **how the page is opened.**
 
 | | Access via | Gets |
 |---|---|---|
@@ -298,7 +298,7 @@ Companions choose between two modes:
 
 ## Private headphone audio
 
-<img src="assets/icons/headphones.svg" width="24" align="left">&nbsp;**PRIVATE AUDIO** (companions only, never on localhost) streams the host's audio to a phone's headphones.
+<img src="headphones.svg" width="24" align="left">&nbsp;**PRIVATE AUDIO** (companions only, never on localhost) streams the host's audio to a phone's headphones.
 
 ```
 Spotify / Windows output
@@ -324,7 +324,7 @@ The audio path is fully separate from lyric sync and the Beat Oracle, so a WebRT
 
 ## Device-specific companions
 
-<img src="assets/icons/devices.svg" width="24" align="left">&nbsp;Remote clients are classified automatically:
+<img src="devices.svg" width="24" align="left">&nbsp;Remote clients are classified automatically:
 
 | Device | Layout |
 |---|---|
@@ -338,7 +338,7 @@ RAVE mode includes animated semantic backdrops, vignette, film/noise texture, a 
 
 ## Samsung TV adaptive profiles
 
-<img src="assets/icons/tv.svg" width="24" align="left">&nbsp;Samsung Smart TV browsers are detected by their SMART-TV / Tizen user agent. The client then tries (best-effort, since ordinary websites aren't guaranteed access to privileged Tizen APIs) to read the Tizen version, model, firmware, display data, memory status, `hardwareConcurrency` and `deviceMemory`, and runs a **~450 ms compositor benchmark**.
+<img src="tv.svg" width="24" align="left">&nbsp;Samsung Smart TV browsers are detected by their SMART-TV / Tizen user agent. The client then tries (best-effort, since ordinary websites aren't guaranteed access to privileged Tizen APIs) to read the Tizen version, model, firmware, display data, memory status, `hardwareConcurrency` and `deviceMemory`, and runs a **~450 ms compositor benchmark**.
 
 | Profile | Target | What changes |
 |---|---|---|
